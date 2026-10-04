@@ -7,19 +7,22 @@ import re
 
 from jevclient import Choice, ChoiceAnswer, JevResponse, Noul, NoulAnswer, Question
 
-from .interpret import ACTIONS, NONE, Interpretation
+from .interpret import NONE, Interpretation
+from .plan_actions import COMPOUND_ACTIONS
 from .snapshot import HomeSnapshot
 
 
 def build_compound_questions(snapshot: HomeSnapshot) -> dict[str, Question]:
     """Ask paired questions against the original sentence, without splitting text."""
+    domains = {
+        domain for action in COMPOUND_ACTIONS.values() for domain in action.domains
+    }
     entities = {
-        e.entity_id: e.as_option() for e in snapshot.entities if e.domain == "light"
+        e.entity_id: e.as_option() for e in snapshot.entities if e.domain in domains
     }
     entities[NONE] = "No single explicitly named light, or an ambiguous target"
     actions = {
-        "turn_on": "Switch this instruction's light on now",
-        "turn_off": "Switch this instruction's light off now",
+        **{key: action.description for key, action in COMPOUND_ACTIONS.items()},
         NONE: "Anything else, including brightness, a delay, a condition or negation",
     }
     questions: dict[str, Question] = {
@@ -80,33 +83,32 @@ def read_compound_plan(
         ):
             return None
         target = snapshot.by_id(entity.choice)
+        definition = COMPOUND_ACTIONS.get(action.choice)
         if (
-            action.choice not in ("turn_on", "turn_off")
+            definition is None
             or target is None
-            or target.domain != "light"
-            or target.state not in ("on", "off")
             or target.entity_id in selected
             or not any(_named(text, name) for name in target.names)
         ):
+            return None
+        slots = definition.build_slots(target, {})
+        if slots is None:
             return None
         # A built-in intent matches names, not the model's entity id. Do not let
         # two identically named devices or aliases widen a singleton target.
         matches = [
             e
             for e in snapshot.entities
-            if e.domain == "light"
+            if e.domain == target.domain
             and (target.area is None or e.area == target.area)
             and target.slot_name.casefold() in {n.casefold() for n in e.names}
         ]
         if len(matches) != 1:
             return None
         selected.add(target.entity_id)
-        slots = {"name": {"value": target.slot_name}, "domain": {"value": ["light"]}}
-        if target.area is not None:
-            slots["area"] = {"value": target.area}
         decisions.append(
             Interpretation(
-                intent_type=ACTIONS[action.choice],
+                intent_type=definition.intent_type,
                 slots=slots,
                 action=action.choice,
                 confidence=min(action.confidence, entity.confidence),

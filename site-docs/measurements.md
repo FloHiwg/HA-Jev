@@ -332,3 +332,20 @@ MkDocs build passed. No development code was installed in a live Home Assistant.
 Live supported/unsupported sentence measurements remain required before removing
 the experimental designation. Hassfest runs in GitHub CI because the local Docker
 daemon was unavailable.
+
+
+### Action definitions refactor (offline, 2026-10-04)
+
+Compound choices and intent slots now come from `plan_actions.py`. The enabled
+catalogue is unchanged: two parameter-free light on/off actions. A frozen action
+definition declares its intent, accepted domains/states and required parameters.
+The initial integer parameter type accepts only whole numbers within its declared
+range, refusing unknown keys, missing values and implicit type conversion.
+Brightness is exercised as a test-only definition and is not enabled in the planner.
+
+The same fixture produced identical serialised Jev questions before and after
+the refactor. The full mocked suite passed 933 tests with 12 skipped and 97.60%
+statement coverage. Config flow, compound validation and action definitions each
+had 100% statement coverage. Removing parameter validation caused six regression
+cases to fail; it was restored. Ruff, formatting and strict mypy on 27 runtime
+modules passed. Live routing measurements and hassfest remain outstanding.

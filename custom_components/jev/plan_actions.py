@@ -34,14 +34,28 @@ class ActionDefinition:
     intent_type: str
     description: str
     domains: frozenset[str]
-    states: frozenset[str]
+    states: frozenset[str] | None
     parameters: tuple[IntegerParameter, ...] = ()
+    service: str | None = None
+    service_overrides: tuple[tuple[str, str], ...] = ()
+
+    def service_for(self, domain: str) -> str | None:
+        """The service the built-in intent needs, or None for a read-only action."""
+        return dict(self.service_overrides).get(domain, self.service)
+
+    def accepts_target(self, target: ExposedEntity) -> bool:
+        """Target eligibility is independent of required parameter values."""
+        return (
+            target.domain in self.domains
+            and target.state not in ("unknown", "unavailable", "")
+            and (self.states is None or target.state in self.states)
+        )
 
     def build_slots(
         self, target: ExposedEntity, supplied: Mapping[str, object]
     ) -> dict[str, Any] | None:
         """Reject the complete step if a target or parameter is unsupported."""
-        if target.domain not in self.domains or target.state not in self.states:
+        if not self.accepts_target(target):
             return None
         if set(supplied) != {p.name for p in self.parameters}:
             return None
@@ -58,14 +72,38 @@ class ActionDefinition:
         return slots
 
 
-# This first refactor preserves the existing experimental scope. Additional
-# actions can be introduced individually without changing the plan executor.
+# Keep this catalogue within the existing Assist snapshot boundary. Locks and
+# entrance covers never enter that snapshot. Vacuums have start/stop services,
+# not the turn_on/off services these intents need. Scenes can only be activated.
+_POWER_DOMAINS = frozenset(
+    {
+        "light",
+        "switch",
+        "fan",
+        "cover",
+        "media_player",
+        "climate",
+        "input_boolean",
+        "script",
+    }
+)
 COMPOUND_ACTIONS: dict[str, ActionDefinition] = {
-    action: ActionDefinition(
-        intent_type=ACTIONS[action],
-        description=f"Switch this instruction's light {state} now",
-        domains=frozenset({"light"}),
-        states=frozenset({"on", "off"}),
-    )
-    for action, state in (("turn_on", "on"), ("turn_off", "off"))
+    "turn_on": ActionDefinition(
+        intent_type=ACTIONS["turn_on"],
+        description="Switch this instruction's device on, fully open a cover, "
+        "or activate a script or scene now. Not playback or a vacuum start.",
+        domains=_POWER_DOMAINS | {"scene"},
+        states=None,
+        service="turn_on",
+        service_overrides=(("cover", "open_cover"),),
+    ),
+    "turn_off": ActionDefinition(
+        intent_type=ACTIONS["turn_off"],
+        description="Switch this instruction's device off, fully close a cover "
+        "or stop a script now. Not playback, a scene or a vacuum stop.",
+        domains=_POWER_DOMAINS,
+        states=None,
+        service="turn_off",
+        service_overrides=(("cover", "close_cover"),),
+    ),
 }

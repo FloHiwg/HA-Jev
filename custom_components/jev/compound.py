@@ -1,4 +1,4 @@
-"""A bounded plan for two named lights, with no action until both are valid."""
+"""A bounded plan for two named devices, with no action until both are valid."""
 
 from __future__ import annotations
 
@@ -14,13 +14,18 @@ from .snapshot import HomeSnapshot
 
 def build_compound_questions(snapshot: HomeSnapshot) -> dict[str, Question]:
     """Ask paired questions against the original sentence, without splitting text."""
-    domains = {
-        domain for action in COMPOUND_ACTIONS.values() for domain in action.domains
-    }
-    entities = {
-        e.entity_id: e.as_option() for e in snapshot.entities if e.domain in domains
-    }
-    entities[NONE] = "No single explicitly named light, or an ambiguous target"
+    entities = {}
+    for target in snapshot.entities:
+        supported = [
+            key
+            for key, action in COMPOUND_ACTIONS.items()
+            if action.accepts_target(target)
+        ]
+        if supported:
+            entities[target.entity_id] = (
+                f"{target.as_option()}; supported actions: {', '.join(supported)}"
+            )
+    entities[NONE] = "No single explicitly named device, or an ambiguous target"
     actions = {
         **{key: action.description for key, action in COMPOUND_ACTIONS.items()},
         NONE: "Anything else, including brightness, a delay, a condition or negation",
@@ -28,11 +33,13 @@ def build_compound_questions(snapshot: HomeSnapshot) -> dict[str, Question]:
     questions: dict[str, Question] = {
         "supported": Noul(
             "Can the ENTIRE request be fulfilled by exactly two immediate on/off "
-            "instructions, each for one distinct explicitly named light?",
-            true="Exactly two named lights with an on/off action for each, now",
+            "instructions, each for one distinct explicitly named device, using only "
+            "the listed actions and targets?",
+            true="Exactly two named devices with a supported on/off action for each, now",
             false="Ambiguous, more or fewer instructions, a room/group, a pronoun "
             "instead of a name, a delay, duration, condition, exception, negation, "
-            "brightness, order-dependent action or any unsupported request",
+            "brightness, a part-way cover position, a thermostat setpoint, playback, "
+            "order-dependent action or any unsupported request",
         )
     }
     for ordinal in ("first", "second"):
@@ -42,9 +49,9 @@ def build_compound_questions(snapshot: HomeSnapshot) -> dict[str, Question]:
             actions,
         )
         questions[f"{ordinal}_entity"] = Choice(
-            f"Which single explicitly named light belongs to the {ordinal} "
+            f"Which single explicitly named device belongs to the {ordinal} "
             "instruction in sentence order? Match names and aliases exactly. "
-            "Do not pick a light for the other instruction or guess a target.",
+            "Do not pick a device for the other instruction or guess a target.",
             entities,
         )
     return questions
@@ -61,8 +68,8 @@ def read_compound_plan(
     """Fail closed on missing answers, guessed targets and overlapping intent names.
 
     The model's plan is not an executable service call. Every selected id must
-    still be an exposed light, and the HA name/area slots must match only that
-    light. Two conflicting actions on one light never become a partial plan.
+    still be an exposed supported device, and the HA name/area slots must match
+    only that device. Two conflicting actions on one device never become a partial plan.
     """
     if any(_named(text, name) for name in snapshot.hidden_names):
         return None
@@ -112,7 +119,7 @@ def read_compound_plan(
                 slots=slots,
                 action=action.choice,
                 confidence=min(action.confidence, entity.confidence),
-                reason="validated compound light instruction",
+                reason="validated compound device instruction",
                 fallback=False,
             )
         )

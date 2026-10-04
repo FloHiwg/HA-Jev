@@ -87,7 +87,7 @@
           "allow_whole_home": "Tillåt kommandon som inte nämner rum eller enhet",
           "llm_tools": "Erbjud Jev som verktyg till andra LLM-agenter",
           "house_check_weekly": "Kontrollera huset en gång i veckan",
-          "compound_lights": "Tillåt två kommandon för namngivna lampor (experimentellt)"
+          "compound_commands": "Tillåt två kommandon för namngivna enheter (experimentellt)"
         },
         "data_description": {
           "daily_token_budget": "Räknas från midnatt i Home Assistants tidszon. 0 betyder ingen gräns.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Att stänga av allt är alltid tillåtet, med eller utan detta val.",
           "llm_tools": "Lägger till två verktyg i Assist-API:et, ett för ja/nej-frågor och ett för att välja ett alternativ. Varje LLM-agent som använder Assist får deras beskrivningar i varje prompt, vilket kostar tokens hos den agentens leverantör. Varje anrop räknas också mot budgeten ovan.",
           "house_check_weekly": "Kl. 10:00, när 7 dagar har gått sedan den senaste kontrollen, går Jev igenom varje entitet som Jevs konversationsagent kan styra i en enda förfrågan och öppnar ett reparationskort för varje tillstånd som ser ut som ett misstag. Kontrollerna av otillgängliga entiteter och svaga batterier kostar ingenting och körs samtidigt.",
-          "compound_lights": "Tillåter exakt två omedelbara på/av-kommandon för olika lampor med fullständiga namn. Lägger till ett API-anrop i budgeten. Stoppar vid fel utan att upprepa slutförda åtgärder."
+          "compound_commands": "Tillåter exakt två omedelbara på/av-kommandon för olika stödda enheter med fullständiga namn, inklusive öppning/stängning av solskydd och aktivering av skript eller scener. Lägger till ett API-anrop i budgeten. Stoppar vid fel utan att upprepa slutförda åtgärder."
         }
       }
     }

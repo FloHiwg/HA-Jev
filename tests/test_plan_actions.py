@@ -25,9 +25,15 @@ def test_current_actions_have_no_parameters_and_preserve_intent_slots(action):
 
 
 @pytest.mark.parametrize(
-    "domain,state", [("lock", "locked"), ("switch", "on"), ("light", "unavailable")]
+    "domain,state",
+    [
+        ("lock", "locked"),
+        ("vacuum", "cleaning"),
+        ("light", "unavailable"),
+        ("fan", "unknown"),
+    ],
 )
-def test_the_registry_does_not_expand_the_current_supported_targets(domain, state):
+def test_unsupported_domains_and_missing_states_are_refused(domain, state):
     target = ExposedEntity(f"{domain}.office", "Office device", domain, "Office", state)
     assert COMPOUND_ACTIONS["turn_on"].build_slots(target, {}) is None
 
@@ -70,3 +76,39 @@ def test_valid_integer_parameter_is_mapped_to_its_declared_slot(level):
         "domain": {"value": ["light"]},
         "brightness": {"value": level},
     }
+
+
+@pytest.mark.parametrize(
+    "domain,state",
+    [
+        ("light", "off"),
+        ("switch", "on"),
+        ("fan", "on"),
+        ("cover", "closed"),
+        ("media_player", "playing"),
+        ("climate", "heat"),
+        ("input_boolean", "off"),
+        ("script", "off"),
+    ],
+)
+@pytest.mark.parametrize("action", ["turn_on", "turn_off"])
+def test_power_actions_accept_each_supported_domain_with_its_own_state(
+    domain, state, action
+):
+    target = ExposedEntity(f"{domain}.office", "Office device", domain, "Office", state)
+    slots = COMPOUND_ACTIONS[action].build_slots(target, {})
+    assert slots["domain"] == {"value": [domain]}
+    expected_service = (
+        {"turn_on": "open_cover", "turn_off": "close_cover"}[action]
+        if domain == "cover"
+        else action
+    )
+    assert COMPOUND_ACTIONS[action].service_for(domain) == expected_service
+
+
+def test_a_scene_can_be_activated_but_not_turned_off():
+    target = ExposedEntity(
+        "scene.evening", "Evening scene", "scene", None, "2026-10-04T10:00:00+00:00"
+    )
+    assert COMPOUND_ACTIONS["turn_on"].build_slots(target, {}) is not None
+    assert COMPOUND_ACTIONS["turn_off"].build_slots(target, {}) is None

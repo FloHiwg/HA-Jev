@@ -87,7 +87,7 @@
           "allow_whole_home": "Allow commands that name no room or device",
           "llm_tools": "Offer Jev as a tool to other LLM agents",
           "house_check_weekly": "Check the house once a week",
-          "compound_lights": "Allow two named light commands (experimental)"
+          "compound_commands": "Allow two named device commands (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Counted from midnight in the Home Assistant time zone. 0 means no limit.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Turning everything off is always allowed, with or without this.",
           "llm_tools": "Adds two tools to the Assist API, one for yes/no questions and one for picking an option. Each LLM agent that uses Assist gets their descriptions in every prompt, which costs tokens at that agent's provider. Each call also counts against the budget above.",
           "house_check_weekly": "At 10:00, once 7 days have passed since the last check, Jev looks at every entity the Jev conversation agent can control in one request and opens a Repairs card for each state that looks like a mistake. The checks for unavailable entities and low batteries cost nothing and run with it.",
-          "compound_lights": "Allows exactly two immediate on/off commands for distinct lights named in full. Adds one budgeted API call. Stops on failure without replaying completed actions."
+          "compound_commands": "Allows exactly two immediate on/off commands for distinct supported devices named in full, including cover open/close and script or scene activation. Adds one budgeted API call. Stops on failure without replaying completed actions."
         }
       }
     }

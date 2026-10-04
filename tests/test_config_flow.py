@@ -19,7 +19,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.jev.const import (
     CONF_ADVANCED,
-    CONF_COMPOUND_LIGHTS,
+    CONF_COMPOUND_COMMANDS,
     CONF_DAILY_TOKEN_BUDGET,
     CONF_MODEL,
     CONF_PRICE_PER_MILLION,
@@ -806,12 +806,12 @@ async def test_compound_light_option_is_explicit_and_persists(
     hass, loaded_entry, enabled
 ):
     result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
-    assert result["data_schema"]({})[CONF_COMPOUND_LIGHTS] is False
+    assert result["data_schema"]({})[CONF_COMPOUND_COMMANDS] is False
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_COMPOUND_LIGHTS: enabled}
+        result["flow_id"], {CONF_COMPOUND_COMMANDS: enabled}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
-    assert loaded_entry.options[CONF_COMPOUND_LIGHTS] is enabled
+    assert loaded_entry.options[CONF_COMPOUND_COMMANDS] is enabled
     reopened = await hass.config_entries.options.async_init(loaded_entry.entry_id)
-    assert reopened["data_schema"]({})[CONF_COMPOUND_LIGHTS] is enabled
+    assert reopened["data_schema"]({})[CONF_COMPOUND_COMMANDS] is enabled

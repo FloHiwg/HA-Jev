@@ -87,7 +87,7 @@
           "allow_whole_home": "Sta opdrachten toe die geen kamer of apparaat noemen",
           "llm_tools": "Jev als tool aanbieden aan andere LLM-agents",
           "house_check_weekly": "Het huis eens per week controleren",
-          "compound_lights": "Twee opdrachten voor genoemde lampen toestaan (experimenteel)"
+          "compound_commands": "Twee opdrachten voor genoemde apparaten toestaan (experimenteel)"
         },
         "data_description": {
           "daily_token_budget": "Geteld vanaf middernacht in de tijdzone van Home Assistant. 0 betekent geen limiet.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Alles uitzetten mag altijd, met of zonder deze optie.",
           "llm_tools": "Voegt twee tools toe aan de Assist-API, een voor ja/nee-vragen en een voor het kiezen van een optie. Elke LLM-agent die Assist gebruikt, krijgt hun beschrijvingen in elke prompt, en dat kost tokens bij de provider van die agent. Elke aanroep telt ook mee voor het budget hierboven.",
           "house_check_weekly": "Om 10:00, zodra de laatste controle 7 dagen geleden is, bekijkt Jev in één verzoek elke entiteit die de Jev-gespreksagent kan bedienen en opent een reparatiekaart voor elke toestand die op een vergissing lijkt. De controles op onbeschikbare entiteiten en lege batterijen kosten niets en draaien mee.",
-          "compound_lights": "Staat precies twee directe aan/uit-opdrachten toe voor verschillende lampen met volledige namen. Voegt één API-aanroep toe aan het budget. Stopt bij fouten zonder voltooide acties te herhalen."
+          "compound_commands": "Staat precies twee directe aan/uit-opdrachten toe voor verschillende ondersteunde apparaten met volledige namen, inclusief openen/sluiten van zonwering en activeren van scripts of scènes. Voegt één API-aanroep toe aan het budget. Stopt bij fouten zonder voltooide acties te herhalen."
         }
       }
     }

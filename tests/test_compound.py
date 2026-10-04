@@ -5,11 +5,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.components import conversation
 from homeassistant.components.homeassistant.exposed_entities import async_expose_entity
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import intent as ha_intent
 from jevclient import ChoiceAnswer, JevConnectionError, NoulAnswer
 
 from custom_components.jev.compound import build_compound_questions, read_compound_plan
-from custom_components.jev.const import CONF_COMPOUND_LIGHTS, CONF_DAILY_TOKEN_BUDGET
+from custom_components.jev.const import CONF_COMPOUND_COMMANDS, CONF_DAILY_TOKEN_BUDGET
 from custom_components.jev.snapshot import ExposedEntity, HomeSnapshot
 
 from .conftest import build_response
@@ -112,10 +113,10 @@ def test_name_collision_does_not_expand_an_intent():
 
 
 @pytest.mark.parametrize("change", ["domain", "state", "exposure"])
-def test_targets_must_still_be_available_exposed_lights(change):
+def test_targets_must_still_be_available_exposed_devices(change):
     state = snapshot()
     if change == "domain":
-        state.entities[1].domain = "switch"
+        state.entities[1].domain = "lock"
     elif change == "state":
         state.entities[1].state = "unavailable"
     else:
@@ -123,7 +124,7 @@ def test_targets_must_still_be_available_exposed_lights(change):
     assert read_compound_plan(build_response(**plan_answers()), TEXT, state, 0.6) is None
 
 
-def test_only_light_choices_and_no_hidden_names_leave_home_assistant():
+def test_supported_device_choices_and_no_hidden_names_leave_home_assistant():
     state = snapshot()
     state.entities.append(
         ExposedEntity("climate.heater", "Heater", "climate", "Office", "heat")
@@ -133,13 +134,14 @@ def test_only_light_choices_and_no_hidden_names_leave_home_assistant():
     assert set(questions["first_entity"].criteria) == {
         "light.kitchen",
         "light.office",
+        "climate.heater",
         "none_of_these",
     }
     assert "Private light" not in str(questions)
 
 
 async def enable(hass, entry):
-    hass.config_entries.async_update_entry(entry, options={CONF_COMPOUND_LIGHTS: True})
+    hass.config_entries.async_update_entry(entry, options={CONF_COMPOUND_COMMANDS: True})
 
 
 def responses(mock_client, final=None):
@@ -232,7 +234,7 @@ async def test_plan_request_obeys_remaining_budget(hass, house, mock_client):
     async def spend_remaining(state, questions):
         response = next(iter(original))
         hass.config_entries.async_update_entry(
-            house, options={CONF_COMPOUND_LIGHTS: True, CONF_DAILY_TOKEN_BUDGET: 1}
+            house, options={CONF_COMPOUND_COMMANDS: True, CONF_DAILY_TOKEN_BUDGET: 1}
         )
         return response
 
@@ -313,3 +315,211 @@ def test_hidden_longer_name_cannot_select_a_shorter_exposed_light():
     state.hidden_names = ["Desk Office light"]
     text = "Turn on Kitchen light and turn off Desk Office light"
     assert read_compound_plan(build_response(**plan_answers()), text, state, 0.6) is None
+
+
+def add_named_device(hass, domain, state, name, **attributes):
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create(
+        domain, "demo", "mixed_device", suggested_object_id="mixed_device"
+    )
+    registry.async_update_entity(entry.entity_id, name=name)
+    hass.states.async_set(entry.entity_id, state, {"friendly_name": name, **attributes})
+    async_expose_entity(hass, conversation.DOMAIN, entry.entity_id, True)
+    return entry.entity_id
+
+
+@pytest.mark.parametrize("action", ["turn_on", "turn_off"])
+@pytest.mark.parametrize(
+    "domain,state",
+    [
+        ("switch", "off"),
+        ("fan", "off"),
+        ("input_boolean", "off"),
+        ("cover", "closed"),
+        ("climate", "heat"),
+        ("media_player", "idle"),
+        ("script", "off"),
+    ],
+)
+async def test_mixed_device_plan_executes_the_actual_domain_services(
+    hass, house, mock_client, domain, state, action
+):
+    await enable(hass, house)
+    entity_id = add_named_device(hass, domain, state, "Office device")
+    responses(
+        mock_client,
+        build_response(
+            **plan_answers(
+                second_action=ChoiceAnswer(
+                    choice=action, probabilities={}, confidence=0.96
+                ),
+                second_entity=ChoiceAnswer(
+                    choice=entity_id, probabilities={}, confidence=0.96
+                ),
+            )
+        ),
+    )
+    service = (
+        {"turn_on": "open_cover", "turn_off": "close_cover"}[action]
+        if domain == "cover"
+        else action
+    )
+    calls = []
+
+    async def record(call):
+        targets = call.data["entity_id"]
+        if isinstance(targets, str):
+            targets = [targets]
+        calls.append((call.domain, call.service, targets))
+        for target in targets:
+            hass.states.async_set(
+                target,
+                "on" if call.service in ("turn_on", "open_cover") else "off",
+                {"friendly_name": hass.states.get(target).name},
+            )
+
+    hass.services.async_register("light", "turn_on", record)
+    hass.services.async_register(domain, service, record)
+    result = await converse(
+        hass, "Turn on Kitchen light and " + action.replace("_", " ") + " Office device"
+    )
+    assert calls == [
+        ("light", "turn_on", ["light.kitchen"]),
+        (domain, service, [entity_id]),
+    ]
+    assert hass.states.get("light.kitchen").state == "on"
+    assert hass.states.get(entity_id).state == ("on" if action == "turn_on" else "off")
+    assert result.response.error_code is None
+
+
+async def test_missing_second_service_prevents_the_first_action(hass, house, mock_client):
+    await enable(hass, house)
+    entity_id = add_named_device(hass, "media_player", "idle", "Office player")
+    responses(
+        mock_client,
+        build_response(
+            **plan_answers(
+                second_entity=ChoiceAnswer(
+                    choice=entity_id, probabilities={}, confidence=0.96
+                ),
+            )
+        ),
+    )
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    assert not hass.services.has_service("media_player", "turn_off")
+    result = await converse(hass, "Turn on Kitchen light and turn off Office player")
+    assert not calls
+    assert result.response.error_code is not None
+
+
+@pytest.mark.parametrize(
+    "domain,device_class",
+    [
+        ("lock", None),
+        ("vacuum", None),
+        ("cover", "door"),
+        ("cover", "garage"),
+        ("cover", "gate"),
+    ],
+)
+async def test_exposed_but_unsupported_target_never_causes_a_partial_action(
+    hass, house, mock_client, domain, device_class
+):
+    await enable(hass, house)
+    entity_id = add_named_device(
+        hass, domain, "closed", "Office device", device_class=device_class
+    )
+    responses(
+        mock_client,
+        build_response(
+            **plan_answers(
+                second_entity=ChoiceAnswer(
+                    choice=entity_id, probabilities={}, confidence=0.96
+                ),
+            )
+        ),
+    )
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    result = await converse(hass, "Turn on Kitchen light and turn off Office device")
+    assert not calls
+    assert result.response.error_code is not None
+
+
+async def test_same_name_in_different_domains_does_not_widen_target(
+    hass, house, mock_client
+):
+    await enable(hass, house)
+    entity_id = add_named_device(hass, "switch", "off", "Office light")
+    responses(mock_client)
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    hass.services.async_register("light", "turn_off", lambda call: calls.append(call))
+    hass.services.async_register("switch", "turn_off", lambda call: calls.append(call))
+    result = await converse(hass, TEXT)
+    assert result.response.error_code is None
+    assert [call.domain for call in calls] == ["light", "light"]
+    assert hass.states.get(entity_id).state == "off"
+
+
+@pytest.mark.parametrize("action", ["turn_on", "turn_off"])
+async def test_scene_activation_has_no_off_approximation(
+    hass, house, mock_client, action
+):
+    await enable(hass, house)
+    entity_id = add_named_device(
+        hass, "scene", "2026-10-04T10:00:00+00:00", "Evening scene"
+    )
+    responses(
+        mock_client,
+        build_response(
+            **plan_answers(
+                second_action=ChoiceAnswer(
+                    choice=action, probabilities={}, confidence=0.96
+                ),
+                second_entity=ChoiceAnswer(
+                    choice=entity_id, probabilities={}, confidence=0.96
+                ),
+            )
+        ),
+    )
+    calls = []
+
+    async def record(call):
+        calls.append(call)
+
+    hass.services.async_register("light", "turn_on", record)
+    hass.services.async_register("scene", "turn_on", record)
+    result = await converse(
+        hass, "Turn on Kitchen light and " + action.replace("_", " ") + " Evening scene"
+    )
+    if action == "turn_on":
+        assert [call.domain for call in calls] == ["light", "scene"]
+        assert result.response.error_code is None
+    else:
+        assert not calls
+        assert result.response.error_code is not None
+
+
+def test_catalogue_describes_target_specific_actions_and_omits_unavailable_devices():
+    state = snapshot()
+    state.entities.extend(
+        [
+            ExposedEntity(
+                "scene.evening",
+                "Evening scene",
+                "scene",
+                None,
+                "2026-10-04T10:00:00+00:00",
+            ),
+            ExposedEntity("fan.office", "Office fan", "fan", None, "unavailable"),
+            ExposedEntity("vacuum.cleaner", "Cleaner", "vacuum", None, "docked"),
+        ]
+    )
+    choices = build_compound_questions(state)["first_entity"].criteria
+    assert "supported actions: turn_on, turn_off" in choices["light.office"]
+    assert "supported actions: turn_on" in choices["scene.evening"]
+    assert "turn_off" not in choices["scene.evening"]
+    assert "fan.office" not in choices
+    assert "vacuum.cleaner" not in choices

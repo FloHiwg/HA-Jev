@@ -57,7 +57,7 @@ from jevclient import (
 from .compound import build_compound_questions, read_compound_plan
 from .const import (
     CONF_ALLOW_WHOLE_HOME,
-    CONF_COMPOUND_LIGHTS,
+    CONF_COMPOUND_COMMANDS,
     CONF_FALLBACK_AGENT,
     CONF_MIN_CONFIDENCE,
     DEFAULT_MIN_CONFIDENCE,
@@ -77,6 +77,7 @@ from .interpret import (
     spoken_name,
 )
 from .payload import payload_bytes
+from .plan_actions import COMPOUND_ACTIONS
 from .snapshot import HomeSnapshot, async_heard_in, async_snapshot
 
 _LOGGER = logging.getLogger(__name__)
@@ -238,7 +239,7 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
 
         if (
             decision.reason == "several commands in one sentence"
-            and self._entry.options.get(CONF_COMPOUND_LIGHTS, False)
+            and self._entry.options.get(CONF_COMPOUND_COMMANDS, False)
         ):
             return await self._compound(user_input, chat_log, snapshot)
 
@@ -273,6 +274,17 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
         plan = read_compound_plan(
             response, user_input.text, snapshot, self._min_confidence
         )
+        failure_reason = "invalid compound device plan"
+        if plan is not None:
+            for decision in plan:
+                domain = decision.slots["domain"]["value"][0]
+                service = COMPOUND_ACTIONS[decision.action].service_for(domain)
+                if service is not None and not self.hass.services.has_service(
+                    domain, service
+                ):
+                    failure_reason = f"required service {domain}.{service} is unavailable"
+                    plan = None
+                    break
         self._trace(
             chat_log,
             response,
@@ -280,13 +292,13 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
                 "text": user_input.text,
                 "action": "compound",
                 "confidence": 0.0,
-                "reason": "validated two-light plan" if plan else "invalid compound plan",
+                "reason": "validated two-device plan" if plan else failure_reason,
                 "slots": {},
                 "plan": [asdict(d) for d in plan] if plan else [],
             },
         )
         if plan is None:
-            return await self._fall_back(user_input, "invalid compound light plan")
+            return await self._fall_back(user_input, failure_reason)
         replies: list[str] = []
         for decision in plan:
             result = await self._act(
@@ -299,7 +311,7 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             speech = result.response.speech.get("plain", {}).get("speech")
             if isinstance(speech, str) and speech:
                 replies.append(speech)
-            # The first intent may already have changed a light. Handing the
+            # The first intent may already have changed a device. Handing the
             # original sentence to a fallback could repeat that action.
             if result.response.error_code is not None:
                 break

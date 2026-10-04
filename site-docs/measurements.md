@@ -349,3 +349,28 @@ statement coverage. Config flow, compound validation and action definitions each
 had 100% statement coverage. Removing parameter validation caused six regression
 cases to fail; it was restored. Ruff, formatting and strict mypy on 27 runtime
 modules passed. Live routing measurements and hassfest remain outstanding.
+
+
+### Mixed-device on/off expansion (offline, 2026-10-04)
+
+The uncommitted next increment enables two distinct named targets from lights,
+switches, fans, input booleans, non-entrance covers, climate devices, media players
+and scripts. Scenes can only be activated. Vacuums remain excluded because their
+start/stop services are not the on/off services used by these intents. Each model
+choice advertises its accepted actions. Both required domain services are checked
+before either instruction executes. This does not guarantee an individual device
+supports every registered service or that hardware execution succeeds.
+
+The experimental option key is renamed from `compound_lights` to
+`compound_commands`; the earlier key is unreleased and was not deployed. No live
+configuration or release version is changed. The coordinator, generic services,
+AI Task and preview are unaffected by this conversation-only change.
+
+The full mocked suite passed 975 tests with 12 skipped and 97.62% statement
+coverage. Config flow, compound validation and action definitions each retained
+100% statement coverage. Mixed-domain tests exercise the real HA intent path,
+including cover service mapping, scene activation, unavailable services and
+excluded exposed targets. Removing the required-service preflight caused its
+regression test to fail; it was restored before the passing suite. Ruff check,
+formatting, strict mypy on 27 runtime modules and strict MkDocs passed. Live model
+accuracy and hassfest remain unverified. Changes are left uncommitted for review.

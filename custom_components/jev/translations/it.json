@@ -87,7 +87,7 @@
           "allow_whole_home": "Consenti comandi che non nominano una stanza o un dispositivo",
           "llm_tools": "Offri Jev come strumento ad altri agenti LLM",
           "house_check_weekly": "Controllare la casa una volta a settimana",
-          "compound_lights": "Consenti due comandi per luci nominate (sperimentale)"
+          "compound_commands": "Consenti due comandi per dispositivi nominati (sperimentale)"
         },
         "data_description": {
           "daily_token_budget": "Conteggiato dalla mezzanotte nel fuso orario di Home Assistant. 0 significa nessun limite.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Spegnere tutto è sempre consentito, con o senza questa opzione.",
           "llm_tools": "Aggiunge due strumenti all'API Assist, uno per le domande sì/no e uno per scegliere un'opzione. Ogni agente LLM che usa Assist riceve le loro descrizioni in ogni prompt, il che costa token presso il fornitore di quell'agente. Ogni chiamata conta anche nel budget qui sopra.",
           "house_check_weekly": "Alle 10:00, quando sono passati 7 giorni dall'ultimo controllo, Jev esamina in una sola richiesta ogni entità che l'agente di conversazione Jev può controllare e apre una scheda di riparazione per ogni stato che sembra un errore. I controlli su entità non disponibili e batterie scariche non costano nulla e vengono fatti insieme.",
-          "compound_lights": "Consente esattamente due comandi immediati di accensione/spegnimento per luci diverse nominate per intero. Aggiunge una chiamata API al budget. Si ferma in caso di errore senza ripetere azioni completate."
+          "compound_commands": "Consente esattamente due comandi immediati di accensione/spegnimento per dispositivi supportati diversi nominati per intero, inclusi apertura/chiusura delle tapparelle e attivazione di script o scene. Aggiunge una chiamata API al budget. Si ferma in caso di errore senza ripetere azioni completate."
         }
       }
     }

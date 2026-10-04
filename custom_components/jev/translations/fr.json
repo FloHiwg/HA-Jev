@@ -87,7 +87,7 @@
           "allow_whole_home": "Autoriser les commandes qui ne nomment ni pièce ni appareil",
           "llm_tools": "Proposer Jev comme outil aux autres agents LLM",
           "house_check_weekly": "Vérifier la maison une fois par semaine",
-          "compound_lights": "Autoriser deux commandes de lumières nommées (expérimental)"
+          "compound_commands": "Autoriser deux commandes d’appareils nommés (expérimental)"
         },
         "data_description": {
           "daily_token_budget": "Compté à partir de minuit dans le fuseau horaire de Home Assistant. 0 signifie aucune limite.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Tout éteindre est toujours autorisé, avec ou sans cette option.",
           "llm_tools": "Ajoute deux outils à l'API Assist, l'un pour les questions oui/non et l'autre pour choisir une option. Chaque agent LLM qui utilise Assist reçoit leurs descriptions dans chaque prompt, ce qui coûte des tokens chez le fournisseur de cet agent. Chaque appel compte aussi dans le budget ci-dessus.",
           "house_check_weekly": "À 10:00, dès que la dernière vérification date de 7 jours, Jev examine en une seule requête chaque entité que l'agent de conversation Jev peut commander et ouvre une carte de réparation pour chaque état qui ressemble à une erreur. Les vérifications des entités indisponibles et des piles faibles ne coûtent rien et sont faites en même temps.",
-          "compound_lights": "Autorise exactement deux commandes immédiates marche/arrêt pour des lumières distinctes nommées en entier. Ajoute un appel API au budget. Arrête en cas d’échec sans répéter les actions terminées."
+          "compound_commands": "Autorise exactement deux commandes immédiates marche/arrêt pour des appareils compatibles distincts nommés en entier, dont ouvrir/fermer les volets et activer des scripts ou scènes. Ajoute un appel API au budget. Arrête en cas d’échec sans répéter les actions terminées."
         }
       }
     }

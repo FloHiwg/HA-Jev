@@ -87,7 +87,7 @@
           "allow_whole_home": "Permitir órdenes que no nombren ninguna habitación ni dispositivo",
           "llm_tools": "Ofrecer Jev como herramienta a otros agentes LLM",
           "house_check_weekly": "Revisar la casa una vez por semana",
-          "compound_lights": "Permitir dos órdenes para luces nombradas (experimental)"
+          "compound_commands": "Permitir dos órdenes para dispositivos nombrados (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Se cuenta desde la medianoche en la zona horaria de Home Assistant. 0 significa sin límite.",
@@ -97,7 +97,7 @@
           "allow_whole_home": "Apagarlo todo siempre está permitido, con o sin esta opción.",
           "llm_tools": "Añade dos herramientas a la API de Assist, una para preguntas de sí o no y otra para elegir una opción. Cada agente LLM que usa Assist recibe sus descripciones en cada prompt, lo que cuesta tokens en el proveedor de ese agente. Cada llamada también cuenta para el presupuesto de arriba.",
           "house_check_weekly": "A las 10:00, cuando han pasado 7 días desde la última revisión, Jev mira en una sola solicitud cada entidad que el agente de conversación Jev puede controlar y abre una tarjeta de reparación por cada estado que parezca un error. Las revisiones de entidades no disponibles y baterías bajas no cuestan nada y se hacen a la vez.",
-          "compound_lights": "Permite exactamente dos órdenes inmediatas de encendido/apagado para luces distintas con nombres completos. Añade una llamada API al presupuesto. Se detiene ante un fallo sin repetir acciones completadas."
+          "compound_commands": "Permite exactamente dos órdenes inmediatas de encendido/apagado para dispositivos compatibles distintos con nombres completos, incluyendo abrir/cerrar persianas y activar scripts o escenas. Añade una llamada API al presupuesto. Se detiene ante un fallo sin repetir acciones completadas."
         }
       }
     }

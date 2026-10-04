@@ -76,15 +76,15 @@ command, in the pipeline's language, such as "Turned on the light". Those senten
 come from Home Assistant's translations. Where they have none, as for a toggle, it
 says "Done."
 
-## Two named lights in one sentence
+## Two named devices in one sentence
 
-In Jev's options, enable **Allow two named light commands (experimental)**. It is
-off by default. For example, with exposed lights named Kitchen light and Office
-light: "Turn on Kitchen light and turn off Office light".
+In Jev's options, enable **Allow two named device commands (experimental)**. It is
+off by default. For example, with an exposed Kitchen light and Office fan:
+"Turn on Kitchen light and turn off Office fan".
 
-This accepts only two immediate on/off instructions for distinct lights, each
-using its full name or alias. Room groups, brightness, pronouns, delays,
-conditions, exclusions, repeated targets and other domains go to the fallback
+This accepts only two immediate on/off instructions for distinct supported
+devices, each using its full name or alias. Room groups, brightness, pronouns, delays,
+conditions, exclusions, repeated targets and unsupported domains go to the fallback
 before anything acts. Unsupported requests are identified by the model, so this
 is experimental: confidence is not a guarantee that it interpreted the sentence
 correctly. The model's routing accuracy has not yet been measured against the
@@ -92,18 +92,27 @@ live API for these new questions.
 
 The original request first classifies the sentence as compound. A second request
 carries the same sentence and exposed state, with five questions: whether the
-whole sentence fits this scope, the first action and light, and the second action
-and light. The actions are chosen from `turn_on`, `turn_off` and `none_of_these`;
-the light choices are entity IDs from the snapshot plus `none_of_these`. This is
+whole sentence fits this scope, the first action and device, and the second action
+and device. The actions are chosen from `turn_on`, `turn_off` and `none_of_these`;
+the device choices are entity IDs from the snapshot plus `none_of_these`. This is
 a curated catalogue, not Home Assistant's service schema or an executable script.
 Both requests count towards the token budget; if the second cannot fit, nothing
 acts.
+
+The catalogue supports lights, switches, fans, input booleans, covers, climate
+devices, media players and scripts. Scenes support activation only. A cover's
+on/off instruction maps to fully opening/closing it. Climate instructions switch
+power rather than setting a temperature; media player instructions switch power
+rather than controlling playback. Vacuums, locks and door, gate or garage covers
+are excluded. Each device option lists the actions it accepts. Before either
+instruction runs, Home Assistant checks that both required domain services exist.
+Individual device capabilities or hardware failures can still fail at execution.
 
 Home Assistant checks every answer before executing either instruction. The
 support probability must be at least 0.9. Each action and target must have
 confidence at least 0.8 or your configured floor, whichever is higher. These are
 conservative policy thresholds, not measured reliability figures. Missing or
-invalid answers, hidden names, unavailable lights and names that would widen a
+invalid answers, hidden names, unavailable devices and names that would widen a
 single-device intent are refused. Exposure and availability are checked again
 after the model replies.
 
@@ -120,7 +129,7 @@ traces and diagnostics contain the paired plan and the rejection reason.
 | Case | What happens |
 |---|---|
 | Below the confidence floor | The whole sentence goes to the fallback agent, nothing done first |
-| Two commands in one sentence | Fallback by default; the experimental two-light option accepts the limited case below |
+| Two commands in one sentence | Fallback by default; the experimental two-device option accepts the limited case below |
 | Needs words written or looked up | Fallback |
 | For another time, for a set time or on a condition, such as "turn off the lamp in 10 minutes" | Fallback. Home Assistant's intents have no timer, so the command would run now |
 | A cover part of the way, such as "open the blinds halfway" | Fallback. `turn_on` opens a cover all the way |

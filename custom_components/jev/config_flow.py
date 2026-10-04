@@ -42,7 +42,7 @@ from yarl import URL
 from .const import (
     CONF_ADVANCED,
     CONF_ALLOW_WHOLE_HOME,
-    CONF_COMPOUND_LIGHTS,
+    CONF_COMPOUND_COMMANDS,
     CONF_DAILY_TOKEN_BUDGET,
     CONF_FALLBACK_AGENT,
     CONF_HOUSE_CHECK_WEEKLY,
@@ -423,8 +423,8 @@ class JevOptionsFlow(OptionsFlow):
                     default=options.get(CONF_MIN_CONFIDENCE, DEFAULT_MIN_CONFIDENCE),
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
                 vol.Optional(
-                    CONF_COMPOUND_LIGHTS,
-                    default=options.get(CONF_COMPOUND_LIGHTS, False),
+                    CONF_COMPOUND_COMMANDS,
+                    default=options.get(CONF_COMPOUND_COMMANDS, False),
                 ): bool,
                 vol.Optional(
                     CONF_ALLOW_WHOLE_HOME,

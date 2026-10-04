@@ -86,7 +86,8 @@
           "min_confidence": "Nur oberhalb dieser Konfidenz handeln (0 bis 1)",
           "allow_whole_home": "Befehle erlauben, die keinen Raum und kein Gerät nennen",
           "llm_tools": "Jev anderen LLM-Agenten als Werkzeug anbieten",
-          "house_check_weekly": "Das Haus einmal pro Woche prüfen"
+          "house_check_weekly": "Das Haus einmal pro Woche prüfen",
+          "compound_lights": "Zwei benannte Lichtbefehle erlauben (experimentell)"
         },
         "data_description": {
           "daily_token_budget": "Gezählt ab Mitternacht in der Zeitzone von Home Assistant. 0 bedeutet kein Limit.",
@@ -95,7 +96,8 @@
           "min_confidence": "Darunter tut Jev nichts und gibt den Befehl an den Ersatz-Agenten weiter.",
           "allow_whole_home": "Alles ausschalten ist immer erlaubt, mit oder ohne diese Option.",
           "llm_tools": "Fügt der Assist-API zwei Werkzeuge hinzu, eines für Ja/Nein-Fragen und eines für die Wahl einer Option. Jeder LLM-Agent, der Assist nutzt, erhält ihre Beschreibungen in jedem Prompt, was beim Anbieter dieses Agenten Tokens kostet. Jeder Aufruf zählt außerdem zum Budget oben.",
-          "house_check_weekly": "Um 10:00, sobald die letzte Prüfung 7 Tage zurückliegt, sieht sich Jev in einer Anfrage jede Entität, die der Jev-Gesprächsagent steuern kann an und öffnet für jeden Zustand, der wie ein Versehen aussieht, eine Reparaturkarte. Die Prüfungen auf nicht verfügbare Entitäten und schwache Batterien kosten nichts und laufen mit."
+          "house_check_weekly": "Um 10:00, sobald die letzte Prüfung 7 Tage zurückliegt, sieht sich Jev in einer Anfrage jede Entität, die der Jev-Gesprächsagent steuern kann an und öffnet für jeden Zustand, der wie ein Versehen aussieht, eine Reparaturkarte. Die Prüfungen auf nicht verfügbare Entitäten und schwache Batterien kosten nichts und laufen mit.",
+          "compound_lights": "Erlaubt genau zwei sofortige Ein-/Aus-Befehle für verschiedene, vollständig benannte Lichter. Ein zusätzlicher API-Aufruf zählt zum Budget. Stoppt bei Fehlern ohne erledigte Aktionen zu wiederholen."
         }
       }
     }

@@ -117,6 +117,7 @@ CONF_BACKGROUND: Final = "background"
 
 CONF_FALLBACK_AGENT: Final = "fallback_agent"
 CONF_MIN_CONFIDENCE: Final = "min_confidence"
+CONF_COMPOUND_LIGHTS: Final = "compound_lights"
 CONF_ALLOW_WHOLE_HOME: Final = "allow_whole_home"
 
 # --- Tools for other LLM agents ---

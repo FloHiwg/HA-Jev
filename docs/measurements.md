@@ -1,6 +1,6 @@
 # Measurements
 
-Everything here was measured against the live API, mostly from a consumer connection
+Except where marked offline, these measurements use the live API, mostly from a consumer connection
 in the Netherlands. Repeated runs of the same cell wander by around 0.15, so treat
 the gaps as the finding rather than the digits.
 
@@ -275,3 +275,27 @@ The 0.8 that turns an answer into a card has no measurement behind it. The actio
 returns only the answers at 0.8 or more, and neither run had one, so these runs do not
 show where the other answers fell. The 10 % for a low battery is a starting value too: how many days a
 battery has left at 10 % differs by device.
+
+
+## Experimental compound light planning (offline, 2026-10-04)
+
+These checks use the mocked client and do not measure live Jev routing accuracy
+or spend API tokens. The experimental option supports two immediate on/off
+instructions for distinct, fully named exposed lights and is disabled by default.
+The support threshold of 0.9 and per-choice floor of 0.8 are conservative policy
+choices awaiting live measurement, not measured accuracy guarantees.
+
+The full Home Assistant 2026.9.2 harness run passed 917 tests with 12 skipped;
+statement coverage was 97.57%. The config flow and compound validator each had
+100% statement coverage. The 33 compound tests cover English and German intent
+responses, missing and malformed answers, hidden/unavailable/non-light targets,
+name collisions, changed exposure during planning, budget refusal and partial
+failure without fallback replay. Two additional options-flow tests check default
+and persisted settings. Removing the availability guard made its test fail;
+the guard was restored before the passing suite run.
+
+Ruff check and formatting, strict mypy on all 26 runtime modules and the strict
+MkDocs build passed. No development code was installed in a live Home Assistant.
+Live supported/unsupported sentence measurements remain required before removing
+the experimental designation. Hassfest runs in GitHub CI because the local Docker
+daemon was unavailable.

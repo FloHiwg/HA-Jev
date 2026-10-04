@@ -7,7 +7,7 @@ Conversation agent to **Jev**.
 
 ## What it does
 
-One sentence becomes one request carrying ten to thirteen questions. Ten are always
+By default, one sentence becomes one request carrying ten to thirteen questions. Ten are always
 there: what should happen, is it compound, does it need text written, is it for
 another time or on a condition, is it a position part of the way, does it leave
 something out, does it say how bright, does it name several devices by part of
@@ -76,12 +76,51 @@ command, in the pipeline's language, such as "Turned on the light". Those senten
 come from Home Assistant's translations. Where they have none, as for a toggle, it
 says "Done."
 
+## Two named lights in one sentence
+
+In Jev's options, enable **Allow two named light commands (experimental)**. It is
+off by default. For example, with exposed lights named Kitchen light and Office
+light: "Turn on Kitchen light and turn off Office light".
+
+This accepts only two immediate on/off instructions for distinct lights, each
+using its full name or alias. Room groups, brightness, pronouns, delays,
+conditions, exclusions, repeated targets and other domains go to the fallback
+before anything acts. Unsupported requests are identified by the model, so this
+is experimental: confidence is not a guarantee that it interpreted the sentence
+correctly. The model's routing accuracy has not yet been measured against the
+live API for these new questions.
+
+The original request first classifies the sentence as compound. A second request
+carries the same sentence and exposed state, with five questions: whether the
+whole sentence fits this scope, the first action and light, and the second action
+and light. The actions are chosen from `turn_on`, `turn_off` and `none_of_these`;
+the light choices are entity IDs from the snapshot plus `none_of_these`. This is
+a curated catalogue, not Home Assistant's service schema or an executable script.
+Both requests count towards the token budget; if the second cannot fit, nothing
+acts.
+
+Home Assistant checks every answer before executing either instruction. The
+support probability must be at least 0.9. Each action and target must have
+confidence at least 0.8 or your configured floor, whichever is higher. These are
+conservative policy thresholds, not measured reliability figures. Missing or
+invalid answers, hidden names, unavailable lights and names that would widen a
+single-device intent are refused. Exposure and availability are checked again
+after the model replies.
+
+The validated plan uses Home Assistant's own `HassTurnOn` and `HassTurnOff`
+intents sequentially. The reply joins their normal translated responses. A
+failure stops the remaining instructions and keeps the error reply with any
+completed-action speech. The original sentence is never handed to a fallback
+once execution starts, because that could repeat a completed action. The two
+operations are not atomic: if the second fails, the first is not undone. Assist
+traces and diagnostics contain the paired plan and the rejection reason.
+
 ## What it refuses
 
 | Case | What happens |
 |---|---|
 | Below the confidence floor | The whole sentence goes to the fallback agent, nothing done first |
-| Two commands in one sentence | Fallback |
+| Two commands in one sentence | Fallback by default; the experimental two-light option accepts the limited case below |
 | Needs words written or looked up | Fallback |
 | For another time, for a set time or on a condition, such as "turn off the lamp in 10 minutes" | Fallback. Home Assistant's intents have no timer, so the command would run now |
 | A cover part of the way, such as "open the blinds halfway" | Fallback. `turn_on` opens a cover all the way |

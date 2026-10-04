@@ -23,6 +23,8 @@ logger:
 | Setup fails with "could not reach the API" | No answer arrived. Check the address, DNS and the network from the Home Assistant host |
 | An AI Task is refused before it is sent | Read the message. It names the field and what its selector would have to be |
 | An error names a limit | It names your number too. 2 to 255 options, 2 to 10 levels, 250 entities |
+| A two-light command goes to the fallback | Enable the experimental option, use complete light names and immediate on/off actions, then inspect the compound plan trace. No actions run when planning is refused |
+| Only the first light changed in a compound command | An intent failed after execution started. The reply reports completed actions and an error; no fallback or automatic replay follows |
 | Voice commands all go to the fallback | Check the traces in diagnostics. Each one records the reason |
 | Voice acts on the wrong device | The names and areas in your entity registry are what the model reads |
 | A question you expected to batch went alone | Its target, template, schedule or triggers differ from the others. The preview says which |

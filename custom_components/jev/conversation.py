@@ -54,8 +54,10 @@ from jevclient import (
     Question,
 )
 
+from .compound import build_compound_questions, read_compound_plan
 from .const import (
     CONF_ALLOW_WHOLE_HOME,
+    CONF_COMPOUND_LIGHTS,
     CONF_FALLBACK_AGENT,
     CONF_MIN_CONFIDENCE,
     DEFAULT_MIN_CONFIDENCE,
@@ -234,6 +236,12 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             },
         )
 
+        if (
+            decision.reason == "several commands in one sentence"
+            and self._entry.options.get(CONF_COMPOUND_LIGHTS, False)
+        ):
+            return await self._compound(user_input, chat_log, snapshot)
+
         if decision.candidates is not None:
             return await self._ask_which(
                 user_input,
@@ -241,6 +249,62 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
                 _Pending(user_input.text, response, snapshot, decision.candidates),
             )
         return await self._act(user_input, chat_log, decision, user_input.text)
+
+    async def _compound(
+        self,
+        user_input: conversation.ConversationInput,
+        chat_log: conversation.ChatLog,
+        snapshot: HomeSnapshot,
+    ) -> conversation.ConversationResult:
+        """Validate the whole plan before acting; never retry a partly acted plan."""
+        questions = build_compound_questions(snapshot)
+        response = await self._ask(
+            user_input, snapshot.as_state() | {"command": user_input.text}, questions
+        )
+        if isinstance(response, conversation.ConversationResult):
+            return response
+        # Exposure, names and availability may change during the API round trip.
+        snapshot = async_snapshot(
+            self.hass,
+            MAX_CONVERSATION_ENTITIES,
+            user_input.text,
+            async_heard_in(self.hass, user_input.satellite_id, user_input.device_id),
+        )
+        plan = read_compound_plan(
+            response, user_input.text, snapshot, self._min_confidence
+        )
+        self._trace(
+            chat_log,
+            response,
+            {
+                "text": user_input.text,
+                "action": "compound",
+                "confidence": 0.0,
+                "reason": "validated two-light plan" if plan else "invalid compound plan",
+                "slots": {},
+                "plan": [asdict(d) for d in plan] if plan else [],
+            },
+        )
+        if plan is None:
+            return await self._fall_back(user_input, "invalid compound light plan")
+        replies: list[str] = []
+        for decision in plan:
+            result = await self._act(
+                user_input,
+                chat_log,
+                decision,
+                user_input.text,
+                fallback_on_failure=False,
+            )
+            speech = result.response.speech.get("plain", {}).get("speech")
+            if isinstance(speech, str) and speech:
+                replies.append(speech)
+            # The first intent may already have changed a light. Handing the
+            # original sentence to a fallback could repeat that action.
+            if result.response.error_code is not None:
+                break
+        result.response.async_set_speech(" ".join(replies))
+        return result
 
     async def _ask(
         self,
@@ -459,6 +523,8 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
         chat_log: conversation.ChatLog,
         decision: Interpretation,
         text: str,
+        *,
+        fallback_on_failure: bool = True,
     ) -> conversation.ConversationResult:
         """Carry out one decision, or say why not."""
         if decision.already_satisfied is not None:
@@ -505,12 +571,24 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             # The model named something the intent layer could not find. That is a
             # miss, not a failure, so the fallback agent gets the sentence intact.
             _LOGGER.debug("intent %s matched nothing: %s", decision.intent_type, err)
+            if not fallback_on_failure:
+                return await self._speak(
+                    user_input,
+                    "intent_failed",
+                    error=ha_intent.IntentResponseErrorCode.FAILED_TO_HANDLE,
+                )
             return await self._fall_back(user_input, "the named target was not found")
         except ha_intent.IntentHandleError as err:
             # Home Assistant raises this only when no entity succeeded, so nothing
             # changed. A media player with no turn_off does this, and the fallback
             # agent may know another way to do what was asked.
             _LOGGER.debug("intent %s failed: %s", decision.intent_type, err)
+            if not fallback_on_failure:
+                return await self._speak(
+                    user_input,
+                    "intent_failed",
+                    error=ha_intent.IntentResponseErrorCode.FAILED_TO_HANDLE,
+                )
             return await self._fall_back(
                 user_input, "the intent failed on every target", "intent_failed"
             )

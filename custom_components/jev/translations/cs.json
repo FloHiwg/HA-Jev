@@ -86,7 +86,8 @@
           "min_confidence": "Jednat jen nad touto jistotou (0 až 1)",
           "allow_whole_home": "Povolit příkazy, které neuvádějí místnost ani zařízení",
           "llm_tools": "Nabídnout Jev jako nástroj ostatním LLM agentům",
-          "house_check_weekly": "Kontrolovat dům jednou týdně"
+          "house_check_weekly": "Kontrolovat dům jednou týdně",
+          "compound_lights": "Povolit dva příkazy pro pojmenovaná světla (experimentální)"
         },
         "data_description": {
           "daily_token_budget": "Počítá se od půlnoci v časovém pásmu Home Assistantu. 0 znamená bez limitu.",
@@ -95,7 +96,8 @@
           "min_confidence": "Pod touto hodnotou Jev nic neudělá a předá příkaz záložnímu agentovi.",
           "allow_whole_home": "Vypnout všechno je dovoleno vždy, s touto volbou i bez ní.",
           "llm_tools": "Přidá do API Assist dva nástroje, jeden pro otázky ano/ne a jeden pro výběr možnosti. Každý LLM agent, který používá Assist, dostane jejich popisy v každém promptu, což stojí tokeny u poskytovatele tohoto agenta. Každé volání se také počítá do rozpočtu výše.",
-          "house_check_weekly": "V 10:00, jakmile od poslední kontroly uplyne 7 dní, Jev v jednom požadavku projde každou entitu, kterou může ovládat konverzační agent Jev a otevře kartu opravy pro každý stav, který vypadá jako omyl. Kontroly nedostupných entit a slabých baterií nic nestojí a běží spolu s ní."
+          "house_check_weekly": "V 10:00, jakmile od poslední kontroly uplyne 7 dní, Jev v jednom požadavku projde každou entitu, kterou může ovládat konverzační agent Jev a otevře kartu opravy pro každý stav, který vypadá jako omyl. Kontroly nedostupných entit a slabých baterií nic nestojí a běží spolu s ní.",
+          "compound_lights": "Povolí přesně dva okamžité příkazy zapnutí/vypnutí pro různá světla uvedená celým názvem. Přidá jeden API požadavek do rozpočtu. Při chybě zastaví bez opakování dokončených akcí."
         }
       }
     }

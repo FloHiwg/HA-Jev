@@ -32,7 +32,8 @@ Not affiliated with TypeSafe. The API client is
   `ai_task.generate_data` when it is called. A boolean, select or number field
   becomes the matching question.
 - A [conversation agent](https://jev.cdevries.dev/conversation/) for Assist routes
-  spoken commands through the same model.
+  spoken commands through the same model. An experimental option accepts two
+  immediate on/off commands for distinct lights named in full.
 - A [house check](https://jev.cdevries.dev/house-check/) opens a Repairs card for
   entities unavailable for a week, low batteries and, in one request, states that
   look like a mistake. A light left on can be turned off from its card and put back.

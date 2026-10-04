@@ -86,7 +86,8 @@
           "min_confidence": "Agir apenas acima desta confiança (0 a 1)",
           "allow_whole_home": "Permitir comandos que não citam cômodo nem dispositivo",
           "llm_tools": "Oferecer o Jev como ferramenta para outros agentes LLM",
-          "house_check_weekly": "Verificar a casa uma vez por semana"
+          "house_check_weekly": "Verificar a casa uma vez por semana",
+          "compound_lights": "Permitir dois comandos para luzes nomeadas (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Contado a partir da meia-noite no fuso horário do Home Assistant. 0 significa sem limite.",
@@ -95,7 +96,8 @@
           "min_confidence": "Abaixo disso, o Jev não faz nada e passa o comando para o agente reserva.",
           "allow_whole_home": "Desligar tudo é sempre permitido, com ou sem esta opção.",
           "llm_tools": "Adiciona duas ferramentas à API do Assist, uma para perguntas de sim ou não e outra para escolher uma opção. Cada agente LLM que usa o Assist recebe as descrições delas em todo prompt, o que custa tokens no provedor desse agente. Cada chamada também conta no orçamento acima.",
-          "house_check_weekly": "Às 10:00, quando 7 dias se passaram desde a última verificação, o Jev examina em uma única solicitação cada entidade que o agente de conversa Jev pode controlar e abre um cartão de reparo para cada estado que parece um engano. As verificações de entidades indisponíveis e baterias fracas não custam nada e são feitas junto."
+          "house_check_weekly": "Às 10:00, quando 7 dias se passaram desde a última verificação, o Jev examina em uma única solicitação cada entidade que o agente de conversa Jev pode controlar e abre um cartão de reparo para cada estado que parece um engano. As verificações de entidades indisponíveis e baterias fracas não custam nada e são feitas junto.",
+          "compound_lights": "Permite exatamente dois comandos imediatos de ligar/desligar para luzes diferentes com nomes completos. Adiciona uma chamada API ao orçamento. Para em caso de falha sem repetir ações concluídas."
         }
       }
     }

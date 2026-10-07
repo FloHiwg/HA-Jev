@@ -293,6 +293,22 @@ def find_brightness(text: str, *, bare: bool = True) -> int | None:
     return _in_range(found.group(1))
 
 
+def find_brightness_values(text: str) -> tuple[int, ...]:
+    """Exact absolute percentages in a compound sentence, without rounding.
+
+    Reuse the single-command percentage syntax and relative/scale guards. Bare
+    digits and levels said in words are intentionally absent from this catalogue.
+    """
+    values = set()
+    for pattern in (_PERCENT, _PERCENT_PREFIX):
+        for number in pattern.finditer(text):
+            if _is_an_amount(text, number) or _is_a_scale(text, number):
+                continue
+            if (value := _in_range(number.group(1))) is not None:
+                values.add(value)
+    return tuple(sorted(values))
+
+
 def without_names(text: str, names: Iterable[str]) -> str:
     """The text with every name that holds a digit taken out.
 

@@ -86,7 +86,9 @@
           "min_confidence": "Alleen handelen boven dit vertrouwen (0 tot 1)",
           "allow_whole_home": "Sta opdrachten toe die geen kamer of apparaat noemen",
           "llm_tools": "Jev als tool aanbieden aan andere LLM-agents",
-          "house_check_weekly": "Het huis eens per week controleren"
+          "house_check_weekly": "Het huis eens per week controleren",
+          "compound_commands": "Twee opdrachten voor genoemde apparaten toestaan (experimenteel)",
+          "lighting_plans": "Lichtstemmingen per kamer (experimenteel)"
         },
         "data_description": {
           "daily_token_budget": "Geteld vanaf middernacht in de tijdzone van Home Assistant. 0 betekent geen limiet.",
@@ -95,7 +97,9 @@
           "min_confidence": "Daaronder doet Jev niets en geeft het de opdracht door aan de terugvalagent.",
           "allow_whole_home": "Alles uitzetten mag altijd, met of zonder deze optie.",
           "llm_tools": "Voegt twee tools toe aan de Assist-API, een voor ja/nee-vragen en een voor het kiezen van een optie. Elke LLM-agent die Assist gebruikt, krijgt hun beschrijvingen in elke prompt, en dat kost tokens bij de provider van die agent. Elke aanroep telt ook mee voor het budget hierboven.",
-          "house_check_weekly": "Om 10:00, zodra de laatste controle 7 dagen geleden is, bekijkt Jev in één verzoek elke entiteit die de Jev-gespreksagent kan bedienen en opent een reparatiekaart voor elke toestand die op een vergissing lijkt. De controles op onbeschikbare entiteiten en lege batterijen kosten niets en draaien mee."
+          "house_check_weekly": "Om 10:00, zodra de laatste controle 7 dagen geleden is, bekijkt Jev in één verzoek elke entiteit die de Jev-gespreksagent kan bedienen en opent een reparatiekaart voor elke toestand die op een vergissing lijkt. De controles op onbeschikbare entiteiten en lege batterijen kosten niets en draaien mee.",
+          "compound_commands": "Staat precies twee directe opdrachten toe voor verschillende ondersteunde apparaten met volledige namen: aan/uit of absolute lichtsterkte met een percentage in cijfers. Voegt één API-aanroep toe aan het budget. Stopt bij fouten zonder voltooide acties te herhalen.",
+          "lighting_plans": "Jev kiest meerdere blootgestelde lampen in één kamer en zonsondergangskleuren en helderheid per lamp. Witte lampen gebruiken passende instellingen. De planning telt mee in het budget. Geen automatische herhaling na de start."
         }
       }
     }
@@ -523,7 +527,9 @@
     "unavailable": "TypeSafe gaf geen antwoord. Probeer het zo nog eens.",
     "which_device": "Bedoel je {first} of {second}?",
     "preview_over_budget": "Het daglimiet voor tokens is op, dus er is geen proefantwoord. De vraag wordt wel opgeslagen.",
-    "preview_nothing_yet": "Geen proefantwoord: er is nog niets om over te vragen."
+    "preview_nothing_yet": "Geen proefantwoord: er is nog niets om over te vragen.",
+    "lighting_done": "Verlichting bijgewerkt. Gewijzigde lampen: {count}.",
+    "lighting_partial": "Verlichting gestopt omdat een lamp niet kon worden bijgewerkt. Gewijzigde lampen: {count}."
   },
   "config_subentries": {
     "question": {

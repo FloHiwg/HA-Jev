@@ -86,7 +86,9 @@
           "min_confidence": "Agir apenas acima desta confiança (0 a 1)",
           "allow_whole_home": "Permitir comandos que não citam cômodo nem dispositivo",
           "llm_tools": "Oferecer o Jev como ferramenta para outros agentes LLM",
-          "house_check_weekly": "Verificar a casa uma vez por semana"
+          "house_check_weekly": "Verificar a casa uma vez por semana",
+          "compound_commands": "Permitir dois comandos para dispositivos nomeados (experimental)",
+          "lighting_plans": "Ambientes de iluminação por cômodo (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Contado a partir da meia-noite no fuso horário do Home Assistant. 0 significa sem limite.",
@@ -95,7 +97,9 @@
           "min_confidence": "Abaixo disso, o Jev não faz nada e passa o comando para o agente reserva.",
           "allow_whole_home": "Desligar tudo é sempre permitido, com ou sem esta opção.",
           "llm_tools": "Adiciona duas ferramentas à API do Assist, uma para perguntas de sim ou não e outra para escolher uma opção. Cada agente LLM que usa o Assist recebe as descrições delas em todo prompt, o que custa tokens no provedor desse agente. Cada chamada também conta no orçamento acima.",
-          "house_check_weekly": "Às 10:00, quando 7 dias se passaram desde a última verificação, o Jev examina em uma única solicitação cada entidade que o agente de conversa Jev pode controlar e abre um cartão de reparo para cada estado que parece um engano. As verificações de entidades indisponíveis e baterias fracas não custam nada e são feitas junto."
+          "house_check_weekly": "Às 10:00, quando 7 dias se passaram desde a última verificação, o Jev examina em uma única solicitação cada entidade que o agente de conversa Jev pode controlar e abre um cartão de reparo para cada estado que parece um engano. As verificações de entidades indisponíveis e baterias fracas não custam nada e são feitas junto.",
+          "compound_commands": "Permite exatamente dois comandos imediatos para dispositivos compatíveis diferentes com nomes completos: ligar/desligar ou brilho absoluto com uma porcentagem escrita em algarismos. Adiciona uma chamada API ao orçamento. Para em caso de falha sem repetir ações concluídas.",
+          "lighting_plans": "Jev seleciona várias luzes expostas de um cômodo e cores do pôr do sol e brilho para cada uma. Luzes brancas usam ajustes compatíveis. O planejamento conta no orçamento. Sem repetição automática após o início."
         }
       }
     }
@@ -523,7 +527,9 @@
     "unavailable": "A TypeSafe não respondeu. Tente novamente em instantes.",
     "which_device": "Você quer dizer {first} ou {second}?",
     "preview_over_budget": "O orçamento diário de tokens acabou, então não há resposta de teste. A pergunta ainda é salva.",
-    "preview_nothing_yet": "Sem resposta de teste: ainda não há nada sobre o que perguntar."
+    "preview_nothing_yet": "Sem resposta de teste: ainda não há nada sobre o que perguntar.",
+    "lighting_done": "Iluminação atualizada. Luzes alteradas: {count}.",
+    "lighting_partial": "Iluminação interrompida porque uma luz não pôde ser atualizada. Luzes alteradas: {count}."
   },
   "config_subentries": {
     "question": {

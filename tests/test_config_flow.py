@@ -19,7 +19,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.jev.const import (
     CONF_ADVANCED,
+    CONF_COMPOUND_COMMANDS,
     CONF_DAILY_TOKEN_BUDGET,
+    CONF_LIGHTING_PLANS,
     CONF_MODEL,
     CONF_PRICE_PER_MILLION,
     DOMAIN,
@@ -798,3 +800,32 @@ async def test_reconfigure_sends_no_stored_key_to_a_new_address(
     assert mock_client.built_by_flow.call_args.args[0] == ""
     assert loaded_entry.data[CONF_API_KEY] == ""
     assert loaded_entry.data[CONF_URL] == GATEWAY
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+async def test_compound_light_option_is_explicit_and_persists(
+    hass, loaded_entry, enabled
+):
+    result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
+    assert result["data_schema"]({})[CONF_COMPOUND_COMMANDS] is False
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_COMPOUND_COMMANDS: enabled}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert loaded_entry.options[CONF_COMPOUND_COMMANDS] is enabled
+    reopened = await hass.config_entries.options.async_init(loaded_entry.entry_id)
+    assert reopened["data_schema"]({})[CONF_COMPOUND_COMMANDS] is enabled
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+async def test_room_lighting_option_defaults_off_and_persists(
+    hass, loaded_entry, enabled
+):
+    result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
+    assert result["data_schema"]({})[CONF_LIGHTING_PLANS] is False
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_LIGHTING_PLANS: enabled}
+    )
+    await hass.async_block_till_done()
+    assert loaded_entry.options[CONF_LIGHTING_PLANS] is enabled

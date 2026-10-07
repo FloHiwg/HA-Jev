@@ -86,7 +86,9 @@
           "min_confidence": "N'agir qu'au-dessus de cette confiance (0 à 1)",
           "allow_whole_home": "Autoriser les commandes qui ne nomment ni pièce ni appareil",
           "llm_tools": "Proposer Jev comme outil aux autres agents LLM",
-          "house_check_weekly": "Vérifier la maison une fois par semaine"
+          "house_check_weekly": "Vérifier la maison une fois par semaine",
+          "compound_commands": "Autoriser deux commandes d’appareils nommés (expérimental)",
+          "lighting_plans": "Ambiances lumineuses par pièce (expérimental)"
         },
         "data_description": {
           "daily_token_budget": "Compté à partir de minuit dans le fuseau horaire de Home Assistant. 0 signifie aucune limite.",
@@ -95,7 +97,9 @@
           "min_confidence": "En dessous, Jev ne fait rien et transmet la commande à l'agent de secours.",
           "allow_whole_home": "Tout éteindre est toujours autorisé, avec ou sans cette option.",
           "llm_tools": "Ajoute deux outils à l'API Assist, l'un pour les questions oui/non et l'autre pour choisir une option. Chaque agent LLM qui utilise Assist reçoit leurs descriptions dans chaque prompt, ce qui coûte des tokens chez le fournisseur de cet agent. Chaque appel compte aussi dans le budget ci-dessus.",
-          "house_check_weekly": "À 10:00, dès que la dernière vérification date de 7 jours, Jev examine en une seule requête chaque entité que l'agent de conversation Jev peut commander et ouvre une carte de réparation pour chaque état qui ressemble à une erreur. Les vérifications des entités indisponibles et des piles faibles ne coûtent rien et sont faites en même temps."
+          "house_check_weekly": "À 10:00, dès que la dernière vérification date de 7 jours, Jev examine en une seule requête chaque entité que l'agent de conversation Jev peut commander et ouvre une carte de réparation pour chaque état qui ressemble à une erreur. Les vérifications des entités indisponibles et des piles faibles ne coûtent rien et sont faites en même temps.",
+          "compound_commands": "Autorise exactement deux commandes immédiates pour des appareils compatibles distincts nommés en entier : marche/arrêt ou luminosité absolue avec un pourcentage écrit en chiffres. Ajoute un appel API au budget. Arrête en cas d’échec sans répéter les actions terminées.",
+          "lighting_plans": "Jev choisit plusieurs lumières exposées dans une pièce et leurs couleurs de coucher de soleil et luminosités. Les lumières blanches utilisent des réglages compatibles. La planification compte dans le budget. Aucune répétition automatique après le début."
         }
       }
     }
@@ -523,7 +527,9 @@
     "unavailable": "TypeSafe n'a pas répondu. Réessayez dans un instant.",
     "which_device": "Voulez-vous dire {first} ou {second} ?",
     "preview_over_budget": "Le budget quotidien de jetons est épuisé, il n'y a donc pas de réponse d'essai. La question est quand même enregistrée.",
-    "preview_nothing_yet": "Pas de réponse d'essai : il n'y a encore rien sur quoi poser la question."
+    "preview_nothing_yet": "Pas de réponse d'essai : il n'y a encore rien sur quoi poser la question.",
+    "lighting_done": "Éclairage mis à jour. Lumières modifiées : {count}.",
+    "lighting_partial": "Éclairage arrêté car une lumière ne pouvait pas être mise à jour. Lumières modifiées : {count}."
   },
   "config_subentries": {
     "question": {

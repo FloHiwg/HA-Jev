@@ -86,7 +86,9 @@
           "min_confidence": "Actuar solo por encima de esta confianza (de 0 a 1)",
           "allow_whole_home": "Permitir órdenes que no nombren ninguna habitación ni dispositivo",
           "llm_tools": "Ofrecer Jev como herramienta a otros agentes LLM",
-          "house_check_weekly": "Revisar la casa una vez por semana"
+          "house_check_weekly": "Revisar la casa una vez por semana",
+          "compound_commands": "Permitir dos órdenes para dispositivos nombrados (experimental)",
+          "lighting_plans": "Ambientes de iluminación por habitación (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Se cuenta desde la medianoche en la zona horaria de Home Assistant. 0 significa sin límite.",
@@ -95,7 +97,9 @@
           "min_confidence": "Por debajo de este valor, Jev no hace nada y pasa el comando al agente de respaldo.",
           "allow_whole_home": "Apagarlo todo siempre está permitido, con o sin esta opción.",
           "llm_tools": "Añade dos herramientas a la API de Assist, una para preguntas de sí o no y otra para elegir una opción. Cada agente LLM que usa Assist recibe sus descripciones en cada prompt, lo que cuesta tokens en el proveedor de ese agente. Cada llamada también cuenta para el presupuesto de arriba.",
-          "house_check_weekly": "A las 10:00, cuando han pasado 7 días desde la última revisión, Jev mira en una sola solicitud cada entidad que el agente de conversación Jev puede controlar y abre una tarjeta de reparación por cada estado que parezca un error. Las revisiones de entidades no disponibles y baterías bajas no cuestan nada y se hacen a la vez."
+          "house_check_weekly": "A las 10:00, cuando han pasado 7 días desde la última revisión, Jev mira en una sola solicitud cada entidad que el agente de conversación Jev puede controlar y abre una tarjeta de reparación por cada estado que parezca un error. Las revisiones de entidades no disponibles y baterías bajas no cuestan nada y se hacen a la vez.",
+          "compound_commands": "Permite exactamente dos órdenes inmediatas para dispositivos compatibles distintos con nombres completos: encendido/apagado o brillo absoluto con un porcentaje escrito en cifras. Añade una llamada API al presupuesto. Se detiene ante un fallo sin repetir acciones completadas.",
+          "lighting_plans": "Jev selecciona varias luces expuestas de una habitación y colores de atardecer y brillo para cada una. Las luces blancas usan ajustes compatibles. La planificación cuenta en el presupuesto. No se repiten acciones tras empezar."
         }
       }
     }
@@ -523,7 +527,9 @@
     "unavailable": "TypeSafe no respondió. Inténtalo de nuevo en un momento.",
     "which_device": "¿Te refieres a {first} o a {second}?",
     "preview_over_budget": "El presupuesto diario de tokens está agotado, así que no hay respuesta de prueba. La pregunta sí se guarda.",
-    "preview_nothing_yet": "Sin respuesta de prueba: todavía no hay nada sobre lo que preguntar."
+    "preview_nothing_yet": "Sin respuesta de prueba: todavía no hay nada sobre lo que preguntar.",
+    "lighting_done": "Iluminación actualizada. Luces modificadas: {count}.",
+    "lighting_partial": "Iluminación detenida porque no se pudo actualizar una luz. Luces modificadas: {count}."
   },
   "config_subentries": {
     "question": {

@@ -14,6 +14,12 @@ from dataclasses import dataclass, field
 
 from homeassistant.components.conversation import DOMAIN as CONVERSATION_DOMAIN
 from homeassistant.components.homeassistant.exposed_entities import async_should_expose
+from homeassistant.components.light import (
+    ATTR_SUPPORTED_COLOR_MODES,
+    brightness_supported,
+    color_supported,
+    color_temp_supported,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
@@ -62,6 +68,11 @@ class ExposedEntity:
     # The names Home Assistant's intents match this entity by, in the user's order.
     # Empty means only the state name, as for an entity with no registry entry.
     intent_names: tuple[str, ...] = ()
+    # Capability facts used locally to constrain compound action choices.
+    capabilities: frozenset[str] = frozenset()
+    min_color_temp_kelvin: int | None = None
+    max_color_temp_kelvin: int | None = None
+    is_group: bool = False
 
     @property
     def aliases(self) -> list[str]:
@@ -255,6 +266,23 @@ def async_snapshot(
                 state=state.state,
                 area_id=area.id if area else None,
                 intent_names=intent_names,
+                capabilities=frozenset(
+                    name
+                    for name, supported in (
+                        ("brightness", brightness_supported),
+                        ("color", color_supported),
+                        ("color_temp", color_temp_supported),
+                    )
+                    if state.domain == "light"
+                    and supported(state.attributes.get(ATTR_SUPPORTED_COLOR_MODES))
+                ),
+                min_color_temp_kelvin=state.attributes.get("min_color_temp_kelvin"),
+                max_color_temp_kelvin=state.attributes.get("max_color_temp_kelvin"),
+                is_group=bool(state.attributes.get("entity_id"))
+                or (
+                    (registry_entry := entities.async_get(state.entity_id)) is not None
+                    and registry_entry.platform == "group"
+                ),
             )
         )
     # Sorted so the option list is stable between requests, which makes a trace

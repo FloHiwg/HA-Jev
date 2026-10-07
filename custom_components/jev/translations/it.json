@@ -86,7 +86,9 @@
           "min_confidence": "Agisci solo sopra questa confidenza (da 0 a 1)",
           "allow_whole_home": "Consenti comandi che non nominano una stanza o un dispositivo",
           "llm_tools": "Offri Jev come strumento ad altri agenti LLM",
-          "house_check_weekly": "Controllare la casa una volta a settimana"
+          "house_check_weekly": "Controllare la casa una volta a settimana",
+          "compound_commands": "Consenti due comandi per dispositivi nominati (sperimentale)",
+          "lighting_plans": "Atmosfere luminose per stanza (sperimentale)"
         },
         "data_description": {
           "daily_token_budget": "Conteggiato dalla mezzanotte nel fuso orario di Home Assistant. 0 significa nessun limite.",
@@ -95,7 +97,9 @@
           "min_confidence": "Sotto questo valore Jev non fa nulla e passa il comando all'agente di riserva.",
           "allow_whole_home": "Spegnere tutto è sempre consentito, con o senza questa opzione.",
           "llm_tools": "Aggiunge due strumenti all'API Assist, uno per le domande sì/no e uno per scegliere un'opzione. Ogni agente LLM che usa Assist riceve le loro descrizioni in ogni prompt, il che costa token presso il fornitore di quell'agente. Ogni chiamata conta anche nel budget qui sopra.",
-          "house_check_weekly": "Alle 10:00, quando sono passati 7 giorni dall'ultimo controllo, Jev esamina in una sola richiesta ogni entità che l'agente di conversazione Jev può controllare e apre una scheda di riparazione per ogni stato che sembra un errore. I controlli su entità non disponibili e batterie scariche non costano nulla e vengono fatti insieme."
+          "house_check_weekly": "Alle 10:00, quando sono passati 7 giorni dall'ultimo controllo, Jev esamina in una sola richiesta ogni entità che l'agente di conversazione Jev può controllare e apre una scheda di riparazione per ogni stato che sembra un errore. I controlli su entità non disponibili e batterie scariche non costano nulla e vengono fatti insieme.",
+          "compound_commands": "Consente esattamente due comandi immediati per dispositivi supportati diversi nominati per intero: accensione/spegnimento o luminosità assoluta con una percentuale scritta in cifre. Aggiunge una chiamata API al budget. Si ferma in caso di errore senza ripetere azioni completate.",
+          "lighting_plans": "Jev sceglie più luci esposte in una stanza e colori del tramonto e luminosità per ciascuna. Le luci bianche usano impostazioni compatibili. La pianificazione conta nel budget. Nessuna ripetizione automatica dopo l’inizio."
         }
       }
     }
@@ -523,7 +527,9 @@
     "unavailable": "TypeSafe non ha risposto. Riprova tra un momento.",
     "which_device": "Intendi {first} o {second}?",
     "preview_over_budget": "Il budget giornaliero di token è esaurito, quindi non c'è una risposta di prova. La domanda viene comunque salvata.",
-    "preview_nothing_yet": "Nessuna risposta di prova: non c'è ancora nulla su cui fare la domanda."
+    "preview_nothing_yet": "Nessuna risposta di prova: non c'è ancora nulla su cui fare la domanda.",
+    "lighting_done": "Illuminazione aggiornata. Luci modificate: {count}.",
+    "lighting_partial": "Illuminazione interrotta perché una luce non poteva essere aggiornata. Luci modificate: {count}."
   },
   "config_subentries": {
     "question": {

@@ -1,6 +1,6 @@
 # Measurements
 
-Everything here was measured against the live API, mostly from a consumer connection
+Except where marked offline, these measurements use the live API, mostly from a consumer connection
 in the Netherlands. Repeated runs of the same cell wander by around 0.15, so treat
 the gaps as the finding rather than the digits.
 
@@ -308,3 +308,128 @@ The 0.8 that turns an answer into a card has no measurement behind it. The actio
 returns only the answers at 0.8 or more, and neither run had one, so these runs do not
 show where the other answers fell. The 10 % for a low battery is a starting value too: how many days a
 battery has left at 10 % differs by device.
+
+
+## Experimental compound light planning (offline, 2026-10-04)
+
+These checks use the mocked client and do not measure live Jev routing accuracy
+or spend API tokens. The experimental option supports two immediate on/off
+instructions for distinct, fully named exposed lights and is disabled by default.
+The support threshold of 0.9 and per-choice floor of 0.8 are conservative policy
+choices awaiting live measurement, not measured accuracy guarantees.
+
+The full Home Assistant 2026.9.2 harness run passed 917 tests with 12 skipped;
+statement coverage was 97.57%. The config flow and compound validator each had
+100% statement coverage. The 33 compound tests cover English and German intent
+responses, missing and malformed answers, hidden/unavailable/non-light targets,
+name collisions, changed exposure during planning, budget refusal and partial
+failure without fallback replay. Two additional options-flow tests check default
+and persisted settings. Removing the availability guard made its test fail;
+the guard was restored before the passing suite run.
+
+Ruff check and formatting, strict mypy on all 26 runtime modules and the strict
+MkDocs build passed. No development code was installed in a live Home Assistant.
+Live supported/unsupported sentence measurements remain required before removing
+the experimental designation. Hassfest runs in GitHub CI because the local Docker
+daemon was unavailable.
+
+
+### Action definitions refactor (offline, 2026-10-04)
+
+Compound choices and intent slots now come from `plan_actions.py`. The enabled
+catalogue is unchanged: two parameter-free light on/off actions. A frozen action
+definition declares its intent, accepted domains/states and required parameters.
+The initial integer parameter type accepts only whole numbers within its declared
+range, refusing unknown keys, missing values and implicit type conversion.
+Brightness is exercised as a test-only definition and is not enabled in the planner.
+
+The same fixture produced identical serialised Jev questions before and after
+the refactor. The full mocked suite passed 933 tests with 12 skipped and 97.60%
+statement coverage. Config flow, compound validation and action definitions each
+had 100% statement coverage. Removing parameter validation caused six regression
+cases to fail; it was restored. Ruff, formatting and strict mypy on 27 runtime
+modules passed. Live routing measurements and hassfest remain outstanding.
+
+
+### Mixed-device on/off expansion (offline, 2026-10-04)
+
+The uncommitted next increment enables two distinct named targets from lights,
+switches, fans, input booleans, non-entrance covers, climate devices, media players
+and scripts. Scenes can only be activated. Vacuums remain excluded because their
+start/stop services are not the on/off services used by these intents. Each model
+choice advertises its accepted actions. Both required domain services are checked
+before either instruction executes. This does not guarantee an individual device
+supports every registered service or that hardware execution succeeds.
+
+The experimental option key is renamed from `compound_lights` to
+`compound_commands`; the earlier key is unreleased and was not deployed. No live
+configuration or release version is changed. The coordinator, generic services,
+AI Task and preview are unaffected by this conversation-only change.
+
+The full mocked suite passed 975 tests with 12 skipped and 97.62% statement
+coverage. Config flow, compound validation and action definitions each retained
+100% statement coverage. Mixed-domain tests exercise the real HA intent path,
+including cover service mapping, scene activation, unavailable services and
+excluded exposed targets. Removing the required-service preflight caused its
+regression test to fail; it was restored before the passing suite. Ruff check,
+formatting, strict mypy on 27 runtime modules and strict MkDocs passed. Live model
+accuracy and hassfest remain unverified. Changes are left uncommitted for review.
+
+
+### Exact compound brightness parameters (offline, 2026-10-04)
+
+The next local increment adds `set_brightness` through the existing action registry
+and required integer parameter contract. Candidates are exact absolute percentages
+written in digits with a percent sign or percent word, from 0 through 100. The
+single-command percentage syntax and amount/scale guards are reused. Bare digits,
+decimal values, relative changes and levels written as words are not approximated.
+Numbers in names are removed before extracting candidate values.
+
+Only lights whose reported color modes support brightness receive that action.
+The capability is rechecked in the fresh snapshot after the API round trip. Each
+instruction has its own typed parameter choice and confidence; missing, low-confidence
+or unoffered values reject the whole plan. Without eligible brightness candidates,
+planning retains five questions. With brightness available it has seven, in the
+same budgeted planning call. Fewer than two supported targets skips planning without
+sending a malformed single-option choice.
+
+The full mocked Home Assistant harness passed 1013 tests with 12 skipped and
+97.65% statement coverage. Config flow, compound validation and action definitions
+each had 100% statement coverage. Coverage includes English/German brightness
+pairing, mixed power/brightness, signed/out-of-range/relative values, names with
+percentages, missing parameters and changed capabilities during planning. Removing
+the capability guard made both unsupported-brightness regression cases fail; it
+was restored before the passing suite. Ruff, formatting, strict mypy on 27 runtime
+modules and strict MkDocs passed. Live model accuracy and hassfest remain unverified.
+The brightness increment is left uncommitted for review; no live deployment.
+
+
+### Variable-target sunset lighting (offline, 2026-10-04)
+
+A separate `lighting_plans` conversation option is disabled by default. It adds a
+creative-look routing question to classification, then one budgeted planning call.
+The plan has three shared questions plus inclusion, tone and brightness choices
+for each eligible exposed individual light. There is no fixed two-target limit.
+Only one explicitly named room or unambiguously named subset in one room is supported.
+Groups, hidden lights and non-dimmable targets are excluded; incomplete all-room
+catalogues reject the request. This changes the conversation path only; scheduled
+contexts, service actions, AI Task and preview retain their existing behaviour.
+
+The initial policy offers amber, orange, red and warm-white RGB tones, with
+brightness from 10% through 100% in ten-point steps. Tunable-white lights use
+2200 K clamped to their reported range; fixed-white lights keep their colour.
+These choices are curated policy, not measured optimal settings or model accuracy.
+Both settings are applied in one service call per selected light. Full-plan
+validation precedes execution, and exposure/capabilities are rechecked before
+each call. Partial execution stops without fallback, replay or rollback.
+
+The full mocked harness passed 1073 tests with 12 skipped and 97.62% statement
+coverage. Config flow, compound validation and action definitions retain 100%
+coverage; the new lighting module has 97%. Tests exercise variable counts,
+English/German replies, named subsets, distinct per-light settings, white-light
+fallbacks, room boundaries, changing exposure, malformed answers, budget refusal
+and partial failures. Removing the selected-but-no-longer-exposed guard caused its
+regression test to fail; restoring it made the test pass. Ruff, formatting, strict
+mypy on 28 runtime modules and strict MkDocs pass. Local hassfest remains unverified
+because Docker is unavailable. No live API requests or HA deployment occurred.
+Brightness and lighting changes remain uncommitted for review.

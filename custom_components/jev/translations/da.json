@@ -87,7 +87,8 @@
           "allow_whole_home": "Tillad kommandoer, der ikke nævner et rum eller en enhed",
           "llm_tools": "Tilbyd Jev som værktøj til andre LLM-agenter",
           "house_check_weekly": "Tjek huset en gang om ugen",
-          "compound_commands": "Tillad to kommandoer til navngivne enheder (eksperimentelt)"
+          "compound_commands": "Tillad to kommandoer til navngivne enheder (eksperimentelt)",
+          "lighting_plans": "Lysstemninger for rum (eksperimentelt)"
         },
         "data_description": {
           "daily_token_budget": "Tælles fra midnat i Home Assistants tidszone. 0 betyder ingen grænse.",
@@ -97,7 +98,8 @@
           "allow_whole_home": "At slukke alt er altid tilladt, med eller uden denne indstilling.",
           "llm_tools": "Tilføjer to værktøjer til Assist-API'et, et til ja/nej-spørgsmål og et til at vælge en mulighed. Hver LLM-agent, der bruger Assist, får deres beskrivelser i hver prompt, hvilket koster tokens hos den agents udbyder. Hvert kald tæller også med i budgettet ovenfor.",
           "house_check_weekly": "Kl. 10:00, når der er gået 7 dage siden sidste tjek, gennemgår Jev i én forespørgsel hver entitet, som Jevs samtaleagent kan styre, og åbner et reparationskort for hver tilstand, der ligner en fejl. Tjekkene af utilgængelige entiteter og svage batterier koster intet og kører med.",
-          "compound_commands": "Tillader præcis to øjeblikkelige tænd/sluk-kommandoer til forskellige understøttede enheder med fulde navne, inklusive åbning/lukning af afskærmning og aktivering af scripts eller scener. Tilføjer ét API-kald til budgettet. Stopper ved fejl uden at gentage udførte handlinger."
+          "compound_commands": "Tillader præcis to øjeblikkelige kommandoer til forskellige understøttede enheder med fulde navne: tænd/sluk eller absolut lysstyrke med en procent skrevet i cifre. Tilføjer ét API-kald til budgettet. Stopper ved fejl uden at gentage udførte handlinger.",
+          "lighting_plans": "Jev vælger flere eksponerede lys i ét rum og solnedgangsfarver og lysstyrke for hvert. Hvide lys bruger kompatible indstillinger. Et planlægningskald tæller med i budgettet. Ingen automatisk gentagelse efter start."
         }
       }
     }
@@ -525,7 +527,9 @@
     "unavailable": "TypeSafe svarede ikke. Prøv igen om et øjeblik.",
     "which_device": "Mener du {first} eller {second}?",
     "preview_over_budget": "Det daglige token-budget er brugt op, så der er intet prøvesvar. Spørgsmålet bliver gemt alligevel.",
-    "preview_nothing_yet": "Intet prøvesvar: der er endnu intet at spørge om."
+    "preview_nothing_yet": "Intet prøvesvar: der er endnu intet at spørge om.",
+    "lighting_done": "Belysning opdateret. Ændrede lys: {count}.",
+    "lighting_partial": "Belysning stoppet, fordi et lys ikke kunne opdateres. Ændrede lys: {count}."
   },
   "config_subentries": {
     "question": {

@@ -6,11 +6,11 @@ it cannot supply a service name or unrecognised Home Assistant slot.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .interpret import ACTIONS
+from .interpret import ACTIONS, find_brightness_values
 from .snapshot import ExposedEntity
 
 
@@ -21,6 +21,15 @@ class IntegerParameter:
     name: str
     minimum: int
     maximum: int
+    description: str = "An exact whole-number value"
+    unit: str = ""
+    extractor: Callable[[str], tuple[int, ...]] | None = None
+
+    def candidate_values(self, text: str) -> tuple[int, ...]:
+        """Only offer exact in-range values extracted from the original command."""
+        if self.extractor is None:
+            return ()
+        return tuple(v for v in self.extractor(text) if self.accepts(v))
 
     def accepts(self, value: object) -> bool:
         """Do not coerce strings, floats or booleans into executable values."""
@@ -38,6 +47,7 @@ class ActionDefinition:
     parameters: tuple[IntegerParameter, ...] = ()
     service: str | None = None
     service_overrides: tuple[tuple[str, str], ...] = ()
+    required_capabilities: frozenset[str] = frozenset()
 
     def service_for(self, domain: str) -> str | None:
         """The service the built-in intent needs, or None for a read-only action."""
@@ -47,6 +57,7 @@ class ActionDefinition:
         """Target eligibility is independent of required parameter values."""
         return (
             target.domain in self.domains
+            and self.required_capabilities <= target.capabilities
             and target.state not in ("unknown", "unavailable", "")
             and (self.states is None or target.state in self.states)
         )
@@ -91,7 +102,8 @@ COMPOUND_ACTIONS: dict[str, ActionDefinition] = {
     "turn_on": ActionDefinition(
         intent_type=ACTIONS["turn_on"],
         description="Switch this instruction's device on, fully open a cover, "
-        "or activate a script or scene now. Not playback or a vacuum start.",
+        "or activate a script or scene now. No brightness requested; use "
+        "set_brightness if a percentage is specified. Not playback or a vacuum start.",
         domains=_POWER_DOMAINS | {"scene"},
         states=None,
         service="turn_on",
@@ -105,5 +117,25 @@ COMPOUND_ACTIONS: dict[str, ActionDefinition] = {
         states=None,
         service="turn_off",
         service_overrides=(("cover", "close_cover"),),
+    ),
+    "set_brightness": ActionDefinition(
+        intent_type=ACTIONS["set_brightness"],
+        description="Set this instruction's light to an exact absolute percentage "
+        "written in digits with a percent sign or percent word. Not a relative "
+        "change, bare number or a level said in words.",
+        domains=frozenset({"light"}),
+        states=frozenset({"on", "off"}),
+        parameters=(
+            IntegerParameter(
+                "brightness",
+                0,
+                100,
+                description="Exact absolute brightness, not a relative amount",
+                unit="%",
+                extractor=find_brightness_values,
+            ),
+        ),
+        service="turn_on",
+        required_capabilities=frozenset({"brightness"}),
     ),
 }

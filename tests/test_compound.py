@@ -523,3 +523,264 @@ def test_catalogue_describes_target_specific_actions_and_omits_unavailable_devic
     assert "turn_off" not in choices["scene.evening"]
     assert "fan.office" not in choices
     assert "vacuum.cleaner" not in choices
+
+
+def bright_snapshot():
+    state = snapshot()
+    for entity in state.entities:
+        entity.capabilities = frozenset({"brightness"})
+    return state
+
+
+def brightness_answers(**overrides):
+    return (
+        plan_answers(
+            first_action=ChoiceAnswer(
+                choice="set_brightness", probabilities={}, confidence=0.96
+            ),
+            second_action=ChoiceAnswer(
+                choice="set_brightness", probabilities={}, confidence=0.96
+            ),
+            first_set_brightness_brightness=ChoiceAnswer(
+                choice="40", probabilities={}, confidence=0.96
+            ),
+            second_set_brightness_brightness=ChoiceAnswer(
+                choice="60", probabilities={}, confidence=0.96
+            ),
+        )
+        | overrides
+    )
+
+
+BRIGHT_TEXT = "Set Kitchen light to 40% and Office light to 60%"
+
+
+def test_each_brightness_question_offers_only_original_exact_values():
+    questions = build_compound_questions(bright_snapshot(), BRIGHT_TEXT)
+    for ordinal in ("first", "second"):
+        assert set(questions[f"{ordinal}_set_brightness_brightness"].criteria) == {
+            "40",
+            "60",
+            "none_of_these",
+        }
+    assert "set_brightness" in questions["first_action"].criteria
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        TEXT,
+        "Dim Kitchen light by 40% and Office light by 60%",
+        "Set Kitchen light to half and Office light to full",
+        "Set Kitchen light to 40 and Office light to 60",
+    ],
+)
+def test_no_parameter_questions_or_brightness_action_without_exact_candidates(text):
+    questions = build_compound_questions(bright_snapshot(), text)
+    assert "set_brightness" not in questions["first_action"].criteria
+    assert "first_set_brightness_brightness" not in questions
+
+
+def test_digits_in_names_do_not_become_parameter_options():
+    state = bright_snapshot()
+    state.entities[0].name = "Kitchen 40% light"
+    questions = build_compound_questions(
+        state, "Turn on Kitchen 40% light and turn off Office light"
+    )
+    assert "set_brightness" not in questions["first_action"].criteria
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        None,
+        ChoiceAnswer(choice="50", probabilities={}, confidence=0.99),
+        ChoiceAnswer(choice="none_of_these", probabilities={}, confidence=0.99),
+        ChoiceAnswer(choice="60", probabilities={}, confidence=0.5),
+        ChoiceAnswer(choice="60", probabilities={}, confidence=float("nan")),
+        ChoiceAnswer(choice="60", probabilities={}, confidence=1.1),
+        NoulAnswer(noul=1),
+    ],
+)
+def test_missing_or_invalid_parameter_rejects_the_entire_plan(answer):
+    answers = brightness_answers()
+    if answer is None:
+        del answers["second_set_brightness_brightness"]
+    else:
+        answers["second_set_brightness_brightness"] = answer
+    assert (
+        read_compound_plan(build_response(**answers), BRIGHT_TEXT, bright_snapshot(), 0.6)
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    "text,language",
+    [
+        (BRIGHT_TEXT, "en"),
+        ("Schalte Kitchen light auf 40 Prozent und Office light auf 60 Prozent", "de"),
+    ],
+)
+async def test_two_brightness_instructions_keep_their_own_exact_levels(
+    hass, house, mock_client, text, language
+):
+    await enable(hass, house)
+    for entity_id, name in (
+        ("light.kitchen", "Kitchen light"),
+        ("light.office", "Office light"),
+    ):
+        hass.states.async_set(
+            entity_id,
+            "on",
+            {"friendly_name": name, "supported_color_modes": ["brightness"]},
+        )
+    responses(mock_client, build_response(**brightness_answers()))
+    calls = []
+
+    async def record(call):
+        targets = call.data["entity_id"]
+        if isinstance(targets, str):
+            targets = [targets]
+        calls.append((targets, call.data["brightness_pct"]))
+        for target in targets:
+            hass.states.async_set(
+                target,
+                "on",
+                {
+                    "friendly_name": hass.states.get(target).name,
+                    "brightness": round(255 * call.data["brightness_pct"] / 100),
+                    "supported_color_modes": ["brightness"],
+                },
+            )
+
+    hass.services.async_register("light", "turn_on", record)
+    result = await converse(hass, text, language=language)
+    assert calls == [(["light.kitchen"], 40), (["light.office"], 60)]
+    assert hass.states.get("light.kitchen").attributes["brightness"] == 102
+    assert hass.states.get("light.office").attributes["brightness"] == 153
+    assert result.response.error_code is None
+    assert result.response.speech["plain"]["speech"]
+    assert mock_client.ask.await_count == 2
+
+
+@pytest.mark.parametrize("color_modes", [None, ["onoff"]])
+async def test_second_light_without_brightness_support_prevents_first_action(
+    hass, house, mock_client, color_modes
+):
+    await enable(hass, house)
+    hass.states.async_set(
+        "light.kitchen",
+        "on",
+        {"friendly_name": "Kitchen light", "supported_color_modes": ["brightness"]},
+    )
+    attributes = {"friendly_name": "Office light"}
+    if color_modes is not None:
+        attributes["supported_color_modes"] = color_modes
+    hass.states.async_set("light.office", "on", attributes)
+    responses(mock_client, build_response(**brightness_answers()))
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    result = await converse(hass, BRIGHT_TEXT)
+    assert not calls
+    assert result.response.error_code is not None
+
+
+async def test_onoff_and_brightness_can_share_one_plan(hass, house, mock_client):
+    await enable(hass, house)
+    hass.states.async_set(
+        "light.office",
+        "on",
+        {"friendly_name": "Office light", "supported_color_modes": ["brightness"]},
+    )
+    responses(
+        mock_client,
+        build_response(
+            **plan_answers(
+                second_action=ChoiceAnswer(
+                    choice="set_brightness", probabilities={}, confidence=0.96
+                ),
+                second_set_brightness_brightness=ChoiceAnswer(
+                    choice="40", probabilities={}, confidence=0.96
+                ),
+            )
+        ),
+    )
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    result = await converse(hass, "Turn on Kitchen light and set Office light to 40%")
+    assert result.response.error_code is None
+    assert len(calls) == 2
+    assert "brightness_pct" not in calls[0].data
+    assert calls[1].data["brightness_pct"] == 40
+
+
+def test_parameter_confidence_contributes_to_plan_confidence():
+    answer = ChoiceAnswer(choice="40", probabilities={}, confidence=0.85)
+    plan = read_compound_plan(
+        build_response(**brightness_answers(first_set_brightness_brightness=answer)),
+        BRIGHT_TEXT,
+        bright_snapshot(),
+        0.6,
+    )
+    assert plan[0].confidence == 0.85
+
+
+def test_fewer_than_two_supported_targets_has_no_plan_request():
+    state = HomeSnapshot(
+        entities=[ExposedEntity("vacuum.cleaner", "Cleaner", "vacuum", None, "docked")]
+    )
+    assert build_compound_questions(state) == {}
+
+
+async def test_brightness_capability_changed_while_planning_prevents_both_actions(
+    hass, house, mock_client
+):
+    await enable(hass, house)
+    for entity_id, name in (
+        ("light.kitchen", "Kitchen light"),
+        ("light.office", "Office light"),
+    ):
+        hass.states.async_set(
+            entity_id,
+            "on",
+            {"friendly_name": name, "supported_color_modes": ["brightness"]},
+        )
+    responses(mock_client, build_response(**brightness_answers()))
+    queued = iter(mock_client.ask.side_effect)
+
+    async def change_capability(state, questions):
+        if "supported" in questions:
+            hass.states.async_set(
+                "light.office",
+                "on",
+                {"friendly_name": "Office light", "supported_color_modes": ["onoff"]},
+            )
+        return next(queued)
+
+    mock_client.ask.side_effect = change_capability
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    result = await converse(hass, BRIGHT_TEXT)
+    assert not calls
+    assert result.response.error_code is not None
+
+
+async def test_one_eligible_target_does_not_send_a_plan_request(hass, house, mock_client):
+    await enable(hass, house)
+    async_expose_entity(hass, conversation.DOMAIN, "light.office", False)
+    responses(mock_client)
+    calls = []
+    hass.services.async_register("light", "turn_on", lambda call: calls.append(call))
+    result = await converse(hass, TEXT)
+    assert not calls
+    assert mock_client.ask.await_count == 1
+    assert result.response.error_code is not None
+
+
+def test_percentage_in_an_area_name_is_not_a_parameter():
+    state = bright_snapshot()
+    state.areas = ["Room 40%"]
+    questions = build_compound_questions(
+        state, "Turn on Kitchen light in Room 40% and turn off Office light"
+    )
+    assert "set_brightness" not in questions["first_action"].criteria

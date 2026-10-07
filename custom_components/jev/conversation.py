@@ -35,7 +35,7 @@ from homeassistant.components.conversation.models import AbstractConversationAge
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_CLASS, MATCH_ALL
 from homeassistant.core import HomeAssistant, State
-from homeassistant.exceptions import TemplateError
+from homeassistant.exceptions import HomeAssistantError, TemplateError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import intent as ha_intent
 from homeassistant.helpers import template, translation
@@ -59,6 +59,7 @@ from .const import (
     CONF_ALLOW_WHOLE_HOME,
     CONF_COMPOUND_COMMANDS,
     CONF_FALLBACK_AGENT,
+    CONF_LIGHTING_PLANS,
     CONF_MIN_CONFIDENCE,
     DEFAULT_MIN_CONFIDENCE,
     DOMAIN,
@@ -76,6 +77,7 @@ from .interpret import (
     read_level,
     spoken_name,
 )
+from .lighting import build_lighting_questions, read_lighting_plan, route_question
 from .payload import payload_bytes
 from .plan_actions import COMPOUND_ACTIONS
 from .snapshot import HomeSnapshot, async_heard_in, async_snapshot
@@ -85,6 +87,9 @@ _LOGGER = logging.getLogger(__name__)
 # Used when a translation is missing, so a missing key is still a sentence rather
 # than a blank reply. Kept in step with strings.json by a test.
 _FALLBACK = {
+    "lighting_done": "Lighting updated. Lights changed: {count}.",
+    "lighting_partial": "Lighting stopped because a light could not be updated. "
+    "Lights changed: {count}.",
     "not_understood": "Sorry, I did not understand that.",
     "whole_house": (
         "That would affect the whole house. Say which room or which device you mean."
@@ -214,10 +219,34 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             return await self._fall_back(user_input, "no entities are exposed to Assist")
 
         questions = build_questions(user_input.text, snapshot, MAX_CONVERSATION_ENTITIES)
+        if self._entry.options.get(CONF_LIGHTING_PLANS, False):
+            questions["lighting_plan"] = route_question()
         state = snapshot.as_state() | {"command": user_input.text}
         response = await self._ask(user_input, state, questions)
         if isinstance(response, conversation.ConversationResult):
             return response
+
+        if self._entry.options.get(CONF_LIGHTING_PLANS, False):
+            route = response.answers.get("lighting_plan")
+            if (
+                not isinstance(route, NoulAnswer)
+                or not 0 <= route.noul <= 1
+                or 0.1 < route.noul < 0.9
+            ):
+                self._trace(
+                    chat_log,
+                    response,
+                    {
+                        "text": user_input.text,
+                        "action": "lighting",
+                        "confidence": 0.0,
+                        "reason": "uncertain lighting classification",
+                        "slots": {},
+                    },
+                )
+                return await self._fall_back(
+                    user_input, "uncertain lighting classification"
+                )
 
         decision = interpret(
             response,
@@ -237,6 +266,14 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             },
         )
 
+        lighting = response.answers.get("lighting_plan")
+        if (
+            self._entry.options.get(CONF_LIGHTING_PLANS, False)
+            and isinstance(lighting, NoulAnswer)
+            and 0.9 <= lighting.noul <= 1
+        ):
+            return await self._lighting(user_input, chat_log, snapshot)
+
         if (
             decision.reason == "several commands in one sentence"
             and self._entry.options.get(CONF_COMPOUND_COMMANDS, False)
@@ -251,6 +288,67 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
             )
         return await self._act(user_input, chat_log, decision, user_input.text)
 
+    async def _lighting(
+        self,
+        user_input: conversation.ConversationInput,
+        chat_log: conversation.ChatLog,
+        snapshot: HomeSnapshot,
+    ) -> conversation.ConversationResult:
+        questions = build_lighting_questions(snapshot)
+        if not questions:
+            return await self._fall_back(user_input, "no eligible room lights")
+        response = await self._ask(
+            user_input, snapshot.as_state() | {"command": user_input.text}, questions
+        )
+        if isinstance(response, conversation.ConversationResult):
+            return response
+        fresh = async_snapshot(self.hass, MAX_CONVERSATION_ENTITIES, user_input.text)
+        plan = read_lighting_plan(response, user_input.text, fresh, self._min_confidence)
+        if not self.hass.services.has_service("light", "turn_on"):
+            plan = None
+        self._trace(
+            chat_log,
+            response,
+            {
+                "text": user_input.text,
+                "action": "lighting",
+                "confidence": 0.0,
+                "reason": "validated lighting plan" if plan else "invalid lighting plan",
+                "slots": {},
+                "plan": [asdict(s) for s in plan.steps] if plan else [],
+            },
+        )
+        if plan is None:
+            return await self._fall_back(user_input, "invalid lighting plan")
+        completed = 0
+        for step in plan.steps:
+            current = async_snapshot(
+                self.hass, MAX_CONVERSATION_ENTITIES, user_input.text
+            )
+            target = current.by_id(step.entity_id)
+            data = step.service_data(target) if target is not None else None
+            try:
+                if data is None:
+                    return await self._speak(
+                        user_input,
+                        "lighting_partial",
+                        count=str(completed),
+                        error=ha_intent.IntentResponseErrorCode.FAILED_TO_HANDLE,
+                    )
+                await self.hass.services.async_call(
+                    "light", "turn_on", data, blocking=True, context=user_input.context
+                )
+            except (HomeAssistantError, TimeoutError) as err:
+                _LOGGER.debug("lighting plan stopped: %s", err)
+                return await self._speak(
+                    user_input,
+                    "lighting_partial",
+                    count=str(completed),
+                    error=ha_intent.IntentResponseErrorCode.FAILED_TO_HANDLE,
+                )
+            completed += 1
+        return await self._speak(user_input, "lighting_done", count=str(completed))
+
     async def _compound(
         self,
         user_input: conversation.ConversationInput,
@@ -258,7 +356,9 @@ class JevConversationEntity(conversation.ConversationEntity, AbstractConversatio
         snapshot: HomeSnapshot,
     ) -> conversation.ConversationResult:
         """Validate the whole plan before acting; never retry a partly acted plan."""
-        questions = build_compound_questions(snapshot)
+        questions = build_compound_questions(snapshot, user_input.text)
+        if not questions:
+            return await self._fall_back(user_input, "fewer than two supported devices")
         response = await self._ask(
             user_input, snapshot.as_state() | {"command": user_input.text}, questions
         )

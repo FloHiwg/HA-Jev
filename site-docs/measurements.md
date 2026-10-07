@@ -374,3 +374,62 @@ excluded exposed targets. Removing the required-service preflight caused its
 regression test to fail; it was restored before the passing suite. Ruff check,
 formatting, strict mypy on 27 runtime modules and strict MkDocs passed. Live model
 accuracy and hassfest remain unverified. Changes are left uncommitted for review.
+
+
+### Exact compound brightness parameters (offline, 2026-10-04)
+
+The next local increment adds `set_brightness` through the existing action registry
+and required integer parameter contract. Candidates are exact absolute percentages
+written in digits with a percent sign or percent word, from 0 through 100. The
+single-command percentage syntax and amount/scale guards are reused. Bare digits,
+decimal values, relative changes and levels written as words are not approximated.
+Numbers in names are removed before extracting candidate values.
+
+Only lights whose reported color modes support brightness receive that action.
+The capability is rechecked in the fresh snapshot after the API round trip. Each
+instruction has its own typed parameter choice and confidence; missing, low-confidence
+or unoffered values reject the whole plan. Without eligible brightness candidates,
+planning retains five questions. With brightness available it has seven, in the
+same budgeted planning call. Fewer than two supported targets skips planning without
+sending a malformed single-option choice.
+
+The full mocked Home Assistant harness passed 1013 tests with 12 skipped and
+97.65% statement coverage. Config flow, compound validation and action definitions
+each had 100% statement coverage. Coverage includes English/German brightness
+pairing, mixed power/brightness, signed/out-of-range/relative values, names with
+percentages, missing parameters and changed capabilities during planning. Removing
+the capability guard made both unsupported-brightness regression cases fail; it
+was restored before the passing suite. Ruff, formatting, strict mypy on 27 runtime
+modules and strict MkDocs passed. Live model accuracy and hassfest remain unverified.
+The brightness increment is left uncommitted for review; no live deployment.
+
+
+### Variable-target sunset lighting (offline, 2026-10-04)
+
+A separate `lighting_plans` conversation option is disabled by default. It adds a
+creative-look routing question to classification, then one budgeted planning call.
+The plan has three shared questions plus inclusion, tone and brightness choices
+for each eligible exposed individual light. There is no fixed two-target limit.
+Only one explicitly named room or unambiguously named subset in one room is supported.
+Groups, hidden lights and non-dimmable targets are excluded; incomplete all-room
+catalogues reject the request. This changes the conversation path only; scheduled
+contexts, service actions, AI Task and preview retain their existing behaviour.
+
+The initial policy offers amber, orange, red and warm-white RGB tones, with
+brightness from 10% through 100% in ten-point steps. Tunable-white lights use
+2200 K clamped to their reported range; fixed-white lights keep their colour.
+These choices are curated policy, not measured optimal settings or model accuracy.
+Both settings are applied in one service call per selected light. Full-plan
+validation precedes execution, and exposure/capabilities are rechecked before
+each call. Partial execution stops without fallback, replay or rollback.
+
+The full mocked harness passed 1073 tests with 12 skipped and 97.62% statement
+coverage. Config flow, compound validation and action definitions retain 100%
+coverage; the new lighting module has 97%. Tests exercise variable counts,
+English/German replies, named subsets, distinct per-light settings, white-light
+fallbacks, room boundaries, changing exposure, malformed answers, budget refusal
+and partial failures. Removing the selected-but-no-longer-exposed guard caused its
+regression test to fail; restoring it made the test pass. Ruff, formatting, strict
+mypy on 28 runtime modules and strict MkDocs pass. Local hassfest remains unverified
+because Docker is unavailable. No live API requests or HA deployment occurred.
+Brightness and lighting changes remain uncommitted for review.

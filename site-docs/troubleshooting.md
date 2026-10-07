@@ -23,7 +23,8 @@ logger:
 | Setup fails with "could not reach the API" | No answer arrived. Check the address, DNS and the network from the Home Assistant host |
 | An AI Task is refused before it is sent | Read the message. It names the field and what its selector would have to be |
 | An error names a limit | It names your number too. 2 to 255 options, 2 to 10 levels, 250 entities |
-| A two-device command goes to the fallback | Enable the experimental option, use complete device names and immediate on/off actions, then inspect the compound plan trace. No actions run when planning is refused |
+| A two-device command goes to the fallback | Enable the experimental option, use complete device names and immediate supported actions, then inspect the compound plan trace. No actions run when planning is refused |
+| Compound brightness goes to fallback | Use exact digit percentages and lights reporting brightness support. Inspect parameter choices and confidence in the trace; missing or unsupported parameters reject the whole plan |
 | Only the first device changed in a compound command | An intent failed after execution started. The reply reports completed actions and an error; no fallback or automatic replay follows |
 | Voice commands all go to the fallback | Check the traces in diagnostics. Each one records the reason |
 | Voice acts on the wrong device | The names and areas in your entity registry are what the model reads |
@@ -61,3 +62,9 @@ states stay in, so read the file before pasting it into a public issue.
 [Open an issue](https://github.com/AboveColin/HA-Jev/issues) with the diagnostics
 file and, if the problem is an answer rather than a crash, the state from the
 preview. An answer without the state it read is not something anyone can debug.
+
+For sunset requests, enable **Room lighting looks (experimental)** and inspect the
+lighting classification and plan in the conversation trace. Use one room name or
+complete light names. Hidden, unavailable, grouped or non-dimmable targets cannot
+be substituted. A partial-failure reply reports completed lights; inspect their
+states before issuing a new request because no rollback or replay occurs.

@@ -87,7 +87,8 @@
           "allow_whole_home": "Tillåt kommandon som inte nämner rum eller enhet",
           "llm_tools": "Erbjud Jev som verktyg till andra LLM-agenter",
           "house_check_weekly": "Kontrollera huset en gång i veckan",
-          "compound_commands": "Tillåt två kommandon för namngivna enheter (experimentellt)"
+          "compound_commands": "Tillåt två kommandon för namngivna enheter (experimentellt)",
+          "lighting_plans": "Ljusstämningar för rum (experimentellt)"
         },
         "data_description": {
           "daily_token_budget": "Räknas från midnatt i Home Assistants tidszon. 0 betyder ingen gräns.",
@@ -97,7 +98,8 @@
           "allow_whole_home": "Att stänga av allt är alltid tillåtet, med eller utan detta val.",
           "llm_tools": "Lägger till två verktyg i Assist-API:et, ett för ja/nej-frågor och ett för att välja ett alternativ. Varje LLM-agent som använder Assist får deras beskrivningar i varje prompt, vilket kostar tokens hos den agentens leverantör. Varje anrop räknas också mot budgeten ovan.",
           "house_check_weekly": "Kl. 10:00, när 7 dagar har gått sedan den senaste kontrollen, går Jev igenom varje entitet som Jevs konversationsagent kan styra i en enda förfrågan och öppnar ett reparationskort för varje tillstånd som ser ut som ett misstag. Kontrollerna av otillgängliga entiteter och svaga batterier kostar ingenting och körs samtidigt.",
-          "compound_commands": "Tillåter exakt två omedelbara på/av-kommandon för olika stödda enheter med fullständiga namn, inklusive öppning/stängning av solskydd och aktivering av skript eller scener. Lägger till ett API-anrop i budgeten. Stoppar vid fel utan att upprepa slutförda åtgärder."
+          "compound_commands": "Tillåter exakt två omedelbara kommandon för olika stödda enheter med fullständiga namn: på/av eller absolut ljusstyrka med ett procenttal skrivet i siffror. Lägger till ett API-anrop i budgeten. Stoppar vid fel utan att upprepa slutförda åtgärder.",
+          "lighting_plans": "Jev väljer flera exponerade lampor i ett rum och solnedgångsfärger och ljusstyrka för varje. Vita lampor använder kompatibla inställningar. Planeringen räknas i budgeten. Ingen automatisk upprepning efter start."
         }
       }
     }
@@ -525,7 +527,9 @@
     "unavailable": "TypeSafe svarade inte. Försök igen om en stund.",
     "which_device": "Menar du {first} eller {second}?",
     "preview_over_budget": "Den dagliga budgeten för token är slut, så det finns inget provsvar. Frågan sparas ändå.",
-    "preview_nothing_yet": "Inget provsvar: det finns inget att fråga om än."
+    "preview_nothing_yet": "Inget provsvar: det finns inget att fråga om än.",
+    "lighting_done": "Belysning uppdaterad. Ändrade lampor: {count}.",
+    "lighting_partial": "Belysning stoppad eftersom en lampa inte kunde uppdateras. Ändrade lampor: {count}."
   },
   "config_subentries": {
     "question": {

@@ -87,7 +87,8 @@
           "allow_whole_home": "Befehle erlauben, die keinen Raum und kein Gerät nennen",
           "llm_tools": "Jev anderen LLM-Agenten als Werkzeug anbieten",
           "house_check_weekly": "Das Haus einmal pro Woche prüfen",
-          "compound_commands": "Zwei benannte Gerätebefehle erlauben (experimentell)"
+          "compound_commands": "Zwei benannte Gerätebefehle erlauben (experimentell)",
+          "lighting_plans": "Lichtstimmungen für Räume (experimentell)"
         },
         "data_description": {
           "daily_token_budget": "Gezählt ab Mitternacht in der Zeitzone von Home Assistant. 0 bedeutet kein Limit.",
@@ -97,7 +98,8 @@
           "allow_whole_home": "Alles ausschalten ist immer erlaubt, mit oder ohne diese Option.",
           "llm_tools": "Fügt der Assist-API zwei Werkzeuge hinzu, eines für Ja/Nein-Fragen und eines für die Wahl einer Option. Jeder LLM-Agent, der Assist nutzt, erhält ihre Beschreibungen in jedem Prompt, was beim Anbieter dieses Agenten Tokens kostet. Jeder Aufruf zählt außerdem zum Budget oben.",
           "house_check_weekly": "Um 10:00, sobald die letzte Prüfung 7 Tage zurückliegt, sieht sich Jev in einer Anfrage jede Entität, die der Jev-Gesprächsagent steuern kann an und öffnet für jeden Zustand, der wie ein Versehen aussieht, eine Reparaturkarte. Die Prüfungen auf nicht verfügbare Entitäten und schwache Batterien kosten nichts und laufen mit.",
-          "compound_commands": "Erlaubt genau zwei sofortige Ein-/Aus-Befehle für verschiedene, vollständig benannte unterstützte Geräte, einschließlich Abdeckungen öffnen/schließen sowie Skripte oder Szenen aktivieren. Ein zusätzlicher API-Aufruf zählt zum Budget. Stoppt bei Fehlern ohne erledigte Aktionen zu wiederholen."
+          "compound_commands": "Erlaubt genau zwei sofortige Befehle für verschiedene, vollständig benannte unterstützte Geräte: Ein/Aus oder absolute Lichthelligkeit mit einem Prozentwert in Ziffern. Ein zusätzlicher API-Aufruf zählt zum Budget. Stoppt bei Fehlern ohne erledigte Aktionen zu wiederholen.",
+          "lighting_plans": "Jev wählt mehrere freigegebene Lampen in einem Raum und passende Sonnenuntergangsfarben und Helligkeiten. Weiße Lampen nutzen kompatible Einstellungen. Ein zusätzlicher Planungsaufruf zählt zum Budget. Keine automatische Wiederholung nach Ausführungsbeginn."
         }
       }
     }
@@ -525,7 +527,9 @@
     "unavailable": "TypeSafe hat nicht geantwortet. Versuche es gleich noch einmal.",
     "which_device": "Meinst du {first} oder {second}?",
     "preview_over_budget": "Das Tagesbudget für Tokens ist aufgebraucht, es gibt also keine Probeantwort. Die Frage wird trotzdem gespeichert.",
-    "preview_nothing_yet": "Keine Probeantwort: Es gibt noch nichts, wonach sich fragen ließe."
+    "preview_nothing_yet": "Keine Probeantwort: Es gibt noch nichts, wonach sich fragen ließe.",
+    "lighting_done": "Beleuchtung aktualisiert. Geänderte Lampen: {count}.",
+    "lighting_partial": "Beleuchtung gestoppt, weil eine Lampe nicht aktualisiert werden konnte. Geänderte Lampen: {count}."
   },
   "config_subentries": {
     "question": {

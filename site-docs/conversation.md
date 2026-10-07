@@ -82,8 +82,9 @@ In Jev's options, enable **Allow two named device commands (experimental)**. It 
 off by default. For example, with an exposed Kitchen light and Office fan:
 "Turn on Kitchen light and turn off Office fan".
 
-This accepts only two immediate on/off instructions for distinct supported
-devices, each using its full name or alias. Room groups, brightness, pronouns, delays,
+This accepts two immediate on/off or absolute light-brightness instructions for
+distinct supported devices, each using its full name or alias. Room groups,
+relative brightness, pronouns, delays,
 conditions, exclusions, repeated targets and unsupported domains go to the fallback
 before anything acts. Unsupported requests are identified by the model, so this
 is experimental: confidence is not a guarantee that it interpreted the sentence
@@ -91,9 +92,10 @@ correctly. The model's routing accuracy has not yet been measured against the
 live API for these new questions.
 
 The original request first classifies the sentence as compound. A second request
-carries the same sentence and exposed state, with five questions: whether the
-whole sentence fits this scope, the first action and device, and the second action
-and device. The actions are chosen from `turn_on`, `turn_off` and `none_of_these`;
+carries the same sentence and exposed state, with questions for whether the whole
+sentence fits this scope, the first action and device, and the second action and
+device. The actions are chosen from `turn_on`, `turn_off`, `set_brightness` and
+`none_of_these`;
 the device choices are entity IDs from the snapshot plus `none_of_these`. This is
 a curated catalogue, not Home Assistant's service schema or an executable script.
 Both requests count towards the token budget; if the second cannot fit, nothing
@@ -108,21 +110,72 @@ are excluded. Each device option lists the actions it accepts. Before either
 instruction runs, Home Assistant checks that both required domain services exist.
 Individual device capabilities or hardware failures can still fail at execution.
 
+For brightness, say an exact percentage in digits, such as "Set Kitchen light to
+40% and Office light to 60%", or combine brightness with on/off: "Turn off Office
+fan and set Kitchen light to 40 percent". Home Assistant extracts the exact values
+and Jev chooses which belongs to each instruction. Each brightness parameter has
+its own question and confidence; both are validated before either action runs.
+Only values explicitly present in the sentence are offered, within 0 to 100.
+Numbers in device or area names are removed from the candidate text. Decimal
+percentages, bare numbers, levels said in words and relative changes are refused
+in compound plans, rather than rounded or guessed.
+
+Only lights whose supported color modes report brightness are offered that action.
+The capability is checked again after the model replies. Parameter questions are
+included only when an eligible light and an exact candidate value exist; otherwise
+on/off plans retain the five-question shape. When brightness is available there
+are seven questions. This adds no further API round trip.
+
 Home Assistant checks every answer before executing either instruction. The
-support probability must be at least 0.9. Each action and target must have
+support probability must be at least 0.9. Each action, target and required parameter must have
 confidence at least 0.8 or your configured floor, whichever is higher. These are
 conservative policy thresholds, not measured reliability figures. Missing or
 invalid answers, hidden names, unavailable devices and names that would widen a
 single-device intent are refused. Exposure and availability are checked again
 after the model replies.
 
-The validated plan uses Home Assistant's own `HassTurnOn` and `HassTurnOff`
-intents sequentially. The reply joins their normal translated responses. A
-failure stops the remaining instructions and keeps the error reply with any
+The validated plan uses Home Assistant's own `HassTurnOn`, `HassTurnOff`
+and `HassLightSet` intents sequentially. The reply joins their normal translated
+responses. A failure stops the remaining instructions and keeps the error reply with any
 completed-action speech. The original sentence is never handed to a fallback
 once execution starts, because that could repeat a completed action. The two
 operations are not atomic: if the second fails, the first is not undone. Assist
 traces and diagnostics contain the paired plan and the rejection reason.
+
+## Room lighting looks (experimental)
+
+Enable **Room lighting looks (experimental)** in Jev's options. It is off by
+default and independent of the two-device command option. Say "Make all lights in
+Living room look like a sunset" or "Mach alle Lichter im Wohnbereich wie einen
+Sonnenuntergang", using your room's full name or alias. You can also name a subset
+of lights in one room using their complete names or aliases.
+
+The planner offers every eligible exposed light as a separate target. Jev chooses
+whether to include it, its tone and its brightness. There is no fixed two-light
+limit on this path. Colour lights receive amber, orange, red or warm white; tunable
+white lights receive warm white within their reported temperature range; fixed
+white lights retain their colour. Brightness choices are 10% through 100% in steps
+of ten. These are policy choices, not measured optimal sunset settings. Arbitrary
+RGB values, other looks, timing, conditions and exclusions are not supported yet.
+
+Only available, dimmable individual lights with an assigned room are eligible.
+Groups are excluded to avoid overlapping commands. Hidden lights remain untouched.
+An all-room request is refused if the exposed catalogue is capped or any exposed
+individual light in that room is unavailable or cannot dim. Named subsets must
+resolve unambiguously. This applies to exposed lights, not every physical light.
+
+The classification request adds a lighting question only when this option is
+on. A creative lighting request then uses a second budgeted request with three
+shared questions and three questions per eligible light: inclusion, tone and
+brightness. Missing or uncertain routing answers refuse the command rather than
+approximating it as an ordinary power command. Live model accuracy is unmeasured.
+
+The full plan validates against a fresh exposure and capability snapshot before
+execution. Each light receives one `light.turn_on` call with colour and brightness
+combined, and is checked again immediately before its call. A failure stops later
+calls and reports how many completed, without fallback, replay or rollback. Device
+hardware may still fail after a service call succeeds. The conversation trace
+contains the selected plan and validation result.
 
 ## What it refuses
 

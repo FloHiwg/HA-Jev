@@ -87,7 +87,8 @@
           "allow_whole_home": "Allow commands that name no room or device",
           "llm_tools": "Offer Jev as a tool to other LLM agents",
           "house_check_weekly": "Check the house once a week",
-          "compound_commands": "Allow two named device commands (experimental)"
+          "compound_commands": "Allow two named device commands (experimental)",
+          "lighting_plans": "Room lighting looks (experimental)"
         },
         "data_description": {
           "daily_token_budget": "Counted from midnight in the Home Assistant time zone. 0 means no limit.",
@@ -97,7 +98,8 @@
           "allow_whole_home": "Turning everything off is always allowed, with or without this.",
           "llm_tools": "Adds two tools to the Assist API, one for yes/no questions and one for picking an option. Each LLM agent that uses Assist gets their descriptions in every prompt, which costs tokens at that agent's provider. Each call also counts against the budget above.",
           "house_check_weekly": "At 10:00, once 7 days have passed since the last check, Jev looks at every entity the Jev conversation agent can control in one request and opens a Repairs card for each state that looks like a mistake. The checks for unavailable entities and low batteries cost nothing and run with it.",
-          "compound_commands": "Allows exactly two immediate on/off commands for distinct supported devices named in full, including cover open/close and script or scene activation. Adds one budgeted API call. Stops on failure without replaying completed actions."
+          "compound_commands": "Allows exactly two immediate commands for distinct supported devices named in full: on/off or absolute light brightness using a percentage written in digits. Adds one budgeted API call. Stops on failure without replaying completed actions.",
+          "lighting_plans": "Lets Jev select multiple exposed lights in one room and choose sunset colours and brightness for each. White lights use compatible settings. Adds a budgeted planning call. No automatic replay after execution starts."
         }
       }
     }
@@ -525,7 +527,9 @@
     "unavailable": "TypeSafe did not answer. Try again in a moment.",
     "which_device": "Do you mean {first} or {second}?",
     "preview_over_budget": "The daily token budget is spent, so there is no trial answer. The question still saves.",
-    "preview_nothing_yet": "No trial answer: there is nothing to ask about yet."
+    "preview_nothing_yet": "No trial answer: there is nothing to ask about yet.",
+    "lighting_done": "Lighting updated. Lights changed: {count}.",
+    "lighting_partial": "Lighting stopped because a light could not be updated. Lights changed: {count}."
   },
   "config_subentries": {
     "question": {

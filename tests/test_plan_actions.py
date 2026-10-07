@@ -4,14 +4,20 @@ import pytest
 
 from custom_components.jev.plan_actions import (
     COMPOUND_ACTIONS,
-    ActionDefinition,
     IntegerParameter,
 )
 from custom_components.jev.snapshot import ExposedEntity
 
 
 def light():
-    return ExposedEntity("light.office", "Office light", "light", "Office", "on")
+    return ExposedEntity(
+        "light.office",
+        "Office light",
+        "light",
+        "Office",
+        "on",
+        capabilities=frozenset({"brightness"}),
+    )
 
 
 @pytest.mark.parametrize("action", ["turn_on", "turn_off"])
@@ -39,14 +45,7 @@ def test_unsupported_domains_and_missing_states_are_refused(domain, state):
 
 
 def brightness_definition():
-    # Exercise the parameter contract without enabling brightness in the planner.
-    return ActionDefinition(
-        intent_type="HassLightSet",
-        description="Set an absolute brightness percentage",
-        domains=frozenset({"light"}),
-        states=frozenset({"on", "off"}),
-        parameters=(IntegerParameter("brightness", 0, 100),),
-    )
+    return COMPOUND_ACTIONS["set_brightness"]
 
 
 @pytest.mark.parametrize(
@@ -112,3 +111,39 @@ def test_a_scene_can_be_activated_but_not_turned_off():
     )
     assert COMPOUND_ACTIONS["turn_on"].build_slots(target, {}) is not None
     assert COMPOUND_ACTIONS["turn_off"].build_slots(target, {}) is None
+
+
+@pytest.mark.parametrize(
+    "text,values",
+    [
+        ("Set Kitchen light to 40% and Office light to 60%", (40, 60)),
+        ("Set Kitchen light to 0 percent and Office light to 100 percent", (0, 100)),
+        ("Schalte Kitchen light auf 40 Prozent und Office light auf 60%", (40, 60)),
+        ("把灯调到百分之40", (40,)),
+        ("set Kitchen light to 40", ()),
+        ("set Kitchen light to forty percent", ()),
+        ("set Kitchen light to 101%", ()),
+        ("set Kitchen light to 12.5%", ()),
+        ("set Kitchen light to -40%", ()),
+        ("dim Kitchen light by 40%", ()),
+        ("set Kitchen light 40% brighter", ()),
+        ("set Kitchen light to 40% and Office light to 40%", (40,)),
+    ],
+)
+def test_brightness_choices_are_exact_absolute_percentages(text, values):
+    parameter = brightness_definition().parameters[0]
+    assert parameter.candidate_values(text) == values
+
+
+def test_a_parameter_without_an_extractor_offers_no_guessed_values():
+    assert IntegerParameter("unimplemented", 0, 100).candidate_values("40%") == ()
+
+
+@pytest.mark.parametrize(
+    "domain,capabilities", [("light", frozenset()), ("switch", frozenset({"brightness"}))]
+)
+def test_brightness_requires_a_light_with_the_reported_capability(domain, capabilities):
+    target = ExposedEntity(
+        f"{domain}.office", "Office device", domain, None, "on", capabilities=capabilities
+    )
+    assert brightness_definition().build_slots(target, {"brightness": 40}) is None

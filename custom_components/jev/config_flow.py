@@ -46,6 +46,7 @@ from .const import (
     CONF_DAILY_TOKEN_BUDGET,
     CONF_FALLBACK_AGENT,
     CONF_HOUSE_CHECK_WEEKLY,
+    CONF_LIGHTING_PLANS,
     CONF_LLM_TOOLS,
     CONF_MIN_CONFIDENCE,
     CONF_MODEL,
@@ -425,6 +426,10 @@ class JevOptionsFlow(OptionsFlow):
                 vol.Optional(
                     CONF_COMPOUND_COMMANDS,
                     default=options.get(CONF_COMPOUND_COMMANDS, False),
+                ): bool,
+                vol.Optional(
+                    CONF_LIGHTING_PLANS,
+                    default=options.get(CONF_LIGHTING_PLANS, False),
                 ): bool,
                 vol.Optional(
                     CONF_ALLOW_WHOLE_HOME,
